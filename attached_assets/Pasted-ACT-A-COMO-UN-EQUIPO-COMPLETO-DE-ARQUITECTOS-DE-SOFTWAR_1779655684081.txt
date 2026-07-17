@@ -1,0 +1,559 @@
+ACTÚA COMO UN EQUIPO COMPLETO DE ARQUITECTOS DE SOFTWARE, DESARROLLADORES SENIOR FULLSTACK, INGENIEROS DEVOPS, EXPERTOS EN IA, UX/UI DESIGNERS, EXPERTOS EN CIBERSEGURIDAD Y ESCALABILIDAD.
+
+QUIERO QUE CREES UNA RED SOCIAL COMPLETA TIPO FACEBOOK MODERNA, ULTRA ESCALABLE, OPTIMIZADA PARA MÓVILES, CON FUNCIONES AVANZADAS DE:
+
+* Facebook
+* LinkedIn
+* TikTok
+* Discord
+* Marketplace
+* Streaming
+* Inteligencia Artificial
+
+LA PLATAFORMA DEBE SER PROFESIONAL, MODERNA, RÁPIDA, SEGURA Y PREPARADA PARA MILLONES DE USUARIOS.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+OBJETIVO GENERAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Construir una plataforma social todo-en-uno con:
+
+✔ Red social
+✔ Empleos
+✔ Marketplace
+✔ Streaming
+✔ IA integrada
+✔ Comunidades
+✔ Monetización
+✔ Analíticas
+✔ Aplicación móvil
+✔ Panel administrativo avanzado
+
+Debe tener arquitectura enterprise, escalabilidad horizontal, microservicios, APIs modernas y experiencia móvil premium.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SISTEMA DE AUTENTICACIÓN Y USUARIOS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+IMPLEMENTAR:
+
+✔ Registro con:
+
+* Email
+* Teléfono
+* Google
+* Apple
+* Facebook
+
+✔ Inicio de sesión seguro
+✔ Recuperación de contraseña
+✔ Verificación OTP
+✔ Autenticación 2FA
+✔ Captcha anti bots
+✔ Login biométrico móvil
+
+SEGURIDAD:
+
+✔ JWT/Auth
+✔ Refresh tokens
+✔ Sesiones seguras
+✔ Encriptación avanzada
+✔ Protección DDOS
+✔ Protección anti bots
+✔ Detección de fraude
+✔ Verificación de dispositivos
+✔ Backups automáticos
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PERFILES DE USUARIO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+EL PERFIL DEBE INCLUIR:
+
+✔ Foto de perfil
+✔ Foto de portada
+✔ Biografía
+✔ Ubicación
+✔ Edad
+✔ Redes sociales
+✔ Sitio web
+✔ Habilidades
+✔ Experiencia laboral
+✔ Estudios
+✔ Idiomas
+✔ Portafolio
+✔ CV descargable
+✔ Perfil verificado
+✔ Insignias y niveles
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TIPOS DE CUENTA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+IMPLEMENTAR LOS SIGUIENTES ROLES:
+
+✔ Usuario normal
+✔ Creador de contenido
+✔ Empresa
+✔ Reclutador
+✔ Influencer
+✔ Moderador
+✔ Administrador
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FEED PRINCIPAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CREAR UN FEED SOCIAL INTELIGENTE CON:
+
+PUBLICACIONES DE:
+
+✔ Texto
+✔ Imágenes
+✔ Videos
+✔ Audios
+✔ GIFs
+✔ PDFs
+✔ Encuestas
+✔ Reels
+✔ Stories
+
+FUNCIONES:
+
+✔ Likes y reacciones
+✔ Comentarios
+✔ Respuestas anidadas
+✔ Compartir publicaciones
+✔ Guardar publicaciones
+✔ Favoritos
+✔ Hashtags
+✔ Menciones
+✔ Etiquetado de usuarios
+✔ Publicaciones programadas
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ALGORITMO INTELIGENTE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+IMPLEMENTAR IA PARA:
+
+✔ Feed personalizado
+✔ Contenido recomendado
+✔ Tendencias
+✔ Contenido viral
+✔ Detección de spam
+✔ Detección de bots
+✔ Moderación automática IA
+✔ Recomendaciones inteligentes
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SISTEMA SOCIAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+IMPLEMENTAR:
+
+✔ Solicitudes de amistad
+✔ Seguidores
+✔ Mejores amigos
+✔ Usuarios restringidos
+✔ Bloqueos
+✔ Silenciar usuarios
+✔ Seguimiento de actividad
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CHAT Y MENSAJERÍA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CREAR MENSAJERÍA EN TIEMPO REAL CON:
+
+✔ Chat en tiempo real
+✔ Mensajes privados
+✔ Chats grupales
+
+ENVÍO DE:
+
+✔ Fotos
+✔ Videos
+✔ Audios
+✔ Archivos
+✔ Stickers
+✔ GIFs
+
+FUNCIONES:
+
+✔ Reacciones a mensajes
+✔ Editar mensajes
+✔ Eliminar mensajes
+✔ Mensajes temporales
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+LLAMADAS Y VIDEOLLAMADAS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+IMPLEMENTAR:
+
+✔ Audio llamadas
+✔ Videollamadas
+✔ Compartir pantalla
+✔ Salas grupales
+✔ Streaming grupal
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STORIES Y REELS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+IMPLEMENTAR:
+
+✔ Stories de 24 horas
+✔ Música integrada
+✔ Encuestas
+✔ Preguntas
+✔ Cuenta regresiva
+✔ Reacciones rápidas
+
+REELS TIPO TIKTOK:
+
+✔ Editor integrado
+✔ Filtros
+✔ Efectos
+✔ Subtítulos IA
+✔ Viralización automática
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SISTEMA DE EMPLEOS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CREAR MÓDULO TIPO LINKEDIN:
+
+✔ Crear hoja de vida
+✔ Perfil profesional
+✔ Aplicar a vacantes
+✔ Guardar empleos
+✔ Empleos cercanos
+✔ Trabajo remoto
+✔ Freelance
+✔ Video presentación
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FUNCIONES PARA EMPRESAS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+IMPLEMENTAR:
+
+✔ Crear página empresarial
+✔ Publicar empleos
+✔ Publicar anuncios
+✔ Buscar candidatos
+✔ IA para selección
+✔ Gestión de candidatos
+✔ Calendario de entrevistas
+✔ Estadísticas empresariales
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MARKETPLACE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CREAR MARKETPLACE COMPLETO:
+
+✔ Compra y venta
+✔ Publicar productos
+✔ Publicar servicios
+✔ Chat comprador-vendedor
+✔ Sistema de pagos
+✔ Calificaciones
+✔ Productos destacados
+
+CATEGORÍAS:
+
+✔ Vehículos
+✔ Casas
+✔ Tecnología
+✔ Servicios
+✔ Freelance
+✔ Moda
+✔ Hogar
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GRUPOS Y COMUNIDADES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+IMPLEMENTAR:
+
+✔ Comunidades públicas
+✔ Comunidades privadas
+✔ Comunidades premium
+✔ Moderadores
+✔ Eventos
+✔ Chats internos
+✔ Cursos
+✔ Streaming
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EVENTOS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CREAR:
+
+✔ Crear eventos
+✔ Eventos online
+✔ Eventos presenciales
+✔ Recordatorios
+✔ Tickets QR
+✔ Streaming de eventos
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STREAMING EN VIVO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+IMPLEMENTAR:
+
+✔ Lives en tiempo real
+✔ Donaciones
+✔ Super chats
+✔ Invitados en vivo
+✔ Replay de transmisiones
+✔ Monetización
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+INTELIGENCIA ARTIFICIAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+INTEGRAR IA PARA:
+
+✔ Generar publicaciones
+✔ Traducción automática
+✔ Corrección de textos
+✔ Recomendaciones inteligentes
+✔ IA para empleos
+✔ Moderación automática
+✔ Detección de toxicidad
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MONETIZACIÓN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+IMPLEMENTAR:
+
+✔ Publicidad interna
+✔ Membresías premium
+✔ Publicaciones patrocinadas
+✔ Boost de publicaciones
+✔ Marketplace premium
+✔ Monetización para creadores
+✔ Donaciones
+✔ Suscripciones
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PANEL ADMINISTRATIVO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CREAR DASHBOARD ADMIN CON:
+
+✔ Gestión de usuarios
+✔ Gestión de publicaciones
+✔ Gestión de reportes
+✔ Gestión de anuncios
+✔ Estadísticas globales
+✔ Logs en tiempo real
+✔ Seguridad avanzada
+✔ Gestión de roles
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MODERACIÓN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+IMPLEMENTAR:
+
+✔ Revisar reportes
+✔ Eliminar contenido
+✔ Suspender usuarios
+✔ Shadow bans
+✔ Revisar apelaciones
+✔ Moderación IA
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ANALÍTICAS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+MOSTRAR:
+
+✔ Usuarios activos
+✔ Tiempo de sesión
+✔ Engagement
+✔ Publicaciones virales
+✔ Estadísticas de empresas
+✔ Ingresos
+✔ Crecimiento de usuarios
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FUNCIONES PREMIUM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+IMPLEMENTAR:
+
+✔ Perfil destacado
+✔ Mayor visibilidad
+✔ Ver quién visitó tu perfil
+✔ Estadísticas avanzadas
+✔ Más almacenamiento
+✔ Prioridad en publicaciones
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+APLICACIÓN MÓVIL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CREAR APP NATIVA O HÍBRIDA PARA:
+
+✔ Android
+✔ iPhone
+
+FUNCIONES:
+
+✔ Push notifications
+✔ Cámara integrada
+✔ Subidas rápidas
+✔ Modo offline parcial
+✔ Geolocalización
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FUNCIONES FUTURISTAS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+IMPLEMENTAR:
+
+✔ Avatares IA
+✔ Asistente virtual IA
+✔ Traducción en tiempo real
+✔ Realidad aumentada
+✔ Wallet digital
+✔ Sistema de recompensas
+✔ Gamificación
+✔ Insignias y niveles
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ROLES Y PERMISOS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+USUARIO:
+✔ Publicar
+✔ Comentar
+✔ Reaccionar
+✔ Aplicar empleos
+✔ Comprar y vender
+
+CREADOR:
+✔ Monetización
+✔ Lives
+✔ Reels avanzados
+✔ Suscriptores
+
+EMPRESA:
+✔ Publicar empleos
+✔ Crear anuncios
+✔ Página empresarial
+
+RECLUTADOR:
+✔ Filtrar candidatos
+✔ Entrevistas
+✔ Gestión de aplicaciones
+
+MODERADOR:
+✔ Revisar contenido
+✔ Suspender usuarios
+✔ Revisar reportes
+
+ADMINISTRADOR:
+✔ Control total del sistema
+✔ Seguridad
+✔ Monetización
+✔ Estadísticas
+✔ Configuración global
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ARQUITECTURA TÉCNICA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+QUIERO QUE PROPONGAS:
+
+✔ Arquitectura completa
+✔ Backend escalable
+✔ Frontend moderno
+✔ Microservicios
+✔ API Gateway
+✔ WebSockets
+✔ CDN
+✔ Balanceadores
+✔ Cache Redis
+✔ Bases de datos
+✔ Almacenamiento multimedia
+✔ Streaming servers
+✔ IA integrada
+✔ Seguridad enterprise
+✔ DevOps completo
+✔ CI/CD
+✔ Docker
+✔ Kubernetes
+✔ Cloud infrastructure
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STACK TECNOLÓGICO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PROPONER EL MEJOR STACK POSIBLE PARA:
+
+✔ Frontend web
+✔ Aplicación móvil
+✔ Backend
+✔ Base de datos SQL
+✔ Base de datos NoSQL
+✔ Cache
+✔ Streaming
+✔ Chat tiempo real
+✔ IA
+✔ DevOps
+✔ Seguridad
+✔ Analíticas
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DISEÑO UI/UX
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+DISEÑAR:
+
+✔ Interfaz moderna
+✔ Estilo premium
+✔ Animaciones fluidas
+✔ Diseño responsive
+✔ Dark mode
+✔ UX tipo TikTok/Facebook
+✔ Navegación rápida
+✔ Optimización móvil extrema
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REQUERIMIENTOS FINALES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+QUIERO QUE GENERES:
+
+✔ Arquitectura completa
+✔ Estructura del proyecto
+✔ Base de datos completa
+✔ APIs necesarias
+✔ Flujo de usuarios
+✔ Roles y permisos
+✔ Wireframes
+✔ Diseño UI/UX
+✔ Escalabilidad
+✔ Seguridad
+✔ Roadmap de desarrollo
+✔ MVP
+✔ Fases de crecimiento
+✔ Estrategia de monetización
+✔ Infraestructura cloud
+✔ Plan DevOps
+✔ Costos aproximados
+✔ Estrategia IA
+✔ Estrategia de crecimiento viral
+
+NO OMITAS NINGUNA FUNCIÓN.
+TODO DEBE ESTAR DETALLADO COMO UNA PLATAFORMA NIVEL FACEBOOK/TIKTOK/LINKEDIN.

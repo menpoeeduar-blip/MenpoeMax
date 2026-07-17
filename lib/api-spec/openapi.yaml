@@ -1,0 +1,2261 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: SocialHub API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: users
+    description: User operations
+  - name: posts
+    description: Post operations
+  - name: stories
+    description: Story operations
+  - name: messages
+    description: Chat and messaging
+  - name: notifications
+    description: Notifications
+  - name: jobs
+    description: Jobs and employment
+  - name: marketplace
+    description: Marketplace listings
+  - name: communities
+    description: Groups and communities
+  - name: events
+    description: Events
+  - name: streams
+    description: Live streaming
+  - name: ai
+    description: AI features
+  - name: Storage
+    description: File upload and serving
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # ─── USERS ───────────────────────────────────────────────────────────────────
+  /users/me:
+    get:
+      operationId: getMe
+      tags: [users]
+      summary: Get current user profile
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    patch:
+      operationId: updateMe
+      tags: [users]
+      summary: Update current user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/{userId}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get a user profile
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/{userId}/follow:
+    post:
+      operationId: followUser
+      tags: [users]
+      summary: Follow a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FollowResult"
+    delete:
+      operationId: unfollowUser
+      tags: [users]
+      summary: Unfollow a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FollowResult"
+
+  /users/{userId}/friends:
+    post:
+      operationId: sendFriendRequest
+      tags: [users]
+      summary: Send a friend request
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FriendRequestResult"
+
+  /users/me/friends:
+    get:
+      operationId: getMyFriends
+      tags: [users]
+      summary: Get my friend requests and friends
+      responses:
+        "200":
+          description: Friends list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  incoming:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FriendRequest"
+                  outgoing:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FriendRequest"
+                  friends:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/User"
+
+  /users/suggestions:
+    get:
+      operationId: getSuggestedUsers
+      tags: [users]
+      summary: Get suggested users to follow
+      responses:
+        "200":
+          description: Suggested users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+  /users/search:
+    get:
+      operationId: searchUsers
+      tags: [users]
+      summary: Search users
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+  /storage/uploads/request-url:
+    post:
+      tags: [Storage]
+      operationId: requestUploadUrl
+      summary: Request a presigned URL for file upload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadUrlRequest'
+      responses:
+        '200':
+          description: Presigned upload URL generated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadUrlResponse'
+        '400':
+          description: Missing or invalid required fields.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: Failed to generate upload URL.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /storage/public-objects/{filePath}:
+    get:
+      tags: [Storage]
+      operationId: getPublicObject
+      summary: Serve a public asset
+      parameters:
+        - name: filePath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Object content
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /storage/objects/{objectPath}:
+    get:
+      tags: [Storage]
+      operationId: getStorageObject
+      summary: Serve an uploaded object
+      parameters:
+        - name: objectPath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Object content
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /users/me/stats:
+    get:
+      operationId: getMyStats
+      tags: [users]
+      summary: Get current user stats (followers, following, posts, etc.)
+      responses:
+        "200":
+          description: User stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserStats"
+
+  # ─── POSTS ───────────────────────────────────────────────────────────────────
+  /posts:
+    get:
+      operationId: getFeed
+      tags: [posts]
+      summary: Get personalized feed
+      parameters:
+        - name: cursor
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Feed posts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostPage"
+    post:
+      operationId: createPost
+      tags: [posts]
+      summary: Create a post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PostInput"
+      responses:
+        "201":
+          description: Created post
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+
+  /posts/trending:
+    get:
+      operationId: getTrendingPosts
+      tags: [posts]
+      summary: Get trending posts
+      responses:
+        "200":
+          description: Trending posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Post"
+
+  /posts/reels:
+    get:
+      operationId: getReels
+      tags: [posts]
+      summary: Get reels/short videos feed
+      parameters:
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Reels
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostPage"
+
+  /posts/{postId}:
+    get:
+      operationId: getPost
+      tags: [posts]
+      summary: Get a single post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Post
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+    delete:
+      operationId: deletePost
+      tags: [posts]
+      summary: Delete a post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /posts/{postId}/like:
+    post:
+      operationId: likePost
+      tags: [posts]
+      summary: Like or react to a post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReactionInput"
+      responses:
+        "200":
+          description: Reaction result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReactionResult"
+
+  /posts/{postId}/save:
+    post:
+      operationId: savePost
+      tags: [posts]
+      summary: Save or unsave a post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Save result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaveResult"
+
+  /posts/{postId}/share:
+    post:
+      operationId: sharePost
+      tags: [posts]
+      summary: Share a post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Share result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShareResult"
+
+  /posts/{postId}/comments:
+    get:
+      operationId: getComments
+      tags: [posts]
+      summary: Get comments for a post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Comments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Comment"
+    post:
+      operationId: createComment
+      tags: [posts]
+      summary: Create a comment on a post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommentInput"
+      responses:
+        "201":
+          description: Created comment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comment"
+
+  /posts/saved:
+    get:
+      operationId: getSavedPosts
+      tags: [posts]
+      summary: Get saved posts
+      responses:
+        "200":
+          description: Saved posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Post"
+
+  /posts/hashtag/{tag}:
+    get:
+      operationId: getPostsByHashtag
+      tags: [posts]
+      summary: Get posts by hashtag
+      parameters:
+        - name: tag
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Posts for hashtag
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Post"
+
+  # ─── STORIES ─────────────────────────────────────────────────────────────────
+  /stories:
+    get:
+      operationId: getStories
+      tags: [stories]
+      summary: Get stories from people you follow
+      responses:
+        "200":
+          description: Stories grouped by user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StoryGroup"
+    post:
+      operationId: createStory
+      tags: [stories]
+      summary: Create a new story
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StoryInput"
+      responses:
+        "201":
+          description: Created story
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Story"
+
+  /stories/{storyId}/view:
+    post:
+      operationId: viewStory
+      tags: [stories]
+      summary: Mark a story as viewed
+      parameters:
+        - name: storyId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ViewResult"
+
+  # ─── MESSAGES ────────────────────────────────────────────────────────────────
+  /conversations:
+    get:
+      operationId: getConversations
+      tags: [messages]
+      summary: Get all conversations
+      responses:
+        "200":
+          description: Conversations list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Conversation"
+    post:
+      operationId: createConversation
+      tags: [messages]
+      summary: Create or get a conversation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConversationInput"
+      responses:
+        "200":
+          description: Conversation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conversation"
+
+  /conversations/{conversationId}/messages:
+    get:
+      operationId: listConversationMessages
+      tags: [messages]
+      summary: Get messages in a conversation
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Message"
+    post:
+      operationId: sendMessage
+      tags: [messages]
+      summary: Send a message
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageInput"
+      responses:
+        "201":
+          description: Sent message
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+
+  # ─── NOTIFICATIONS ────────────────────────────────────────────────────────────
+  /notifications:
+    get:
+      operationId: getNotifications
+      tags: [notifications]
+      summary: Get notifications
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+
+  /notifications/unread-count:
+    get:
+      operationId: getUnreadNotificationCount
+      tags: [notifications]
+      summary: Get unread notification count
+      responses:
+        "200":
+          description: Unread count
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnreadCount"
+
+  /notifications/read-all:
+    post:
+      operationId: markAllNotificationsRead
+      tags: [notifications]
+      summary: Mark all notifications as read
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionResult"
+
+  # ─── JOBS ─────────────────────────────────────────────────────────────────────
+  /jobs:
+    get:
+      operationId: getJobs
+      tags: [jobs]
+      summary: Get job listings
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: location
+          in: query
+          schema:
+            type: string
+        - name: remote
+          in: query
+          schema:
+            type: boolean
+        - name: type
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Job listings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Job"
+    post:
+      operationId: createJob
+      tags: [jobs]
+      summary: Post a job listing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JobInput"
+      responses:
+        "201":
+          description: Created job
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+
+  /jobs/{jobId}:
+    get:
+      operationId: getJob
+      tags: [jobs]
+      summary: Get a job listing
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Job
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+
+  /jobs/{jobId}/apply:
+    post:
+      operationId: applyToJob
+      tags: [jobs]
+      summary: Apply to a job
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JobApplicationInput"
+      responses:
+        "201":
+          description: Application submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobApplication"
+
+  /jobs/{jobId}/save:
+    post:
+      operationId: saveJob
+      tags: [jobs]
+      summary: Save a job
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SaveResult"
+
+  /jobs/saved:
+    get:
+      operationId: getSavedJobs
+      tags: [jobs]
+      summary: Get saved jobs
+      responses:
+        "200":
+          description: Saved jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Job"
+
+  /jobs/recommended:
+    get:
+      operationId: getRecommendedJobs
+      tags: [jobs]
+      summary: Get AI-recommended jobs
+      responses:
+        "200":
+          description: Recommended jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Job"
+
+  # ─── MARKETPLACE ──────────────────────────────────────────────────────────────
+  /marketplace/listings:
+    get:
+      operationId: getListings
+      tags: [marketplace]
+      summary: Get marketplace listings
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: minPrice
+          in: query
+          schema:
+            type: number
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Listings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Listing"
+    post:
+      operationId: createListing
+      tags: [marketplace]
+      summary: Create a marketplace listing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ListingInput"
+      responses:
+        "201":
+          description: Created listing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Listing"
+
+  /marketplace/listings/{listingId}:
+    get:
+      operationId: getListing
+      tags: [marketplace]
+      summary: Get a listing
+      parameters:
+        - name: listingId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Listing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Listing"
+
+  /marketplace/categories:
+    get:
+      operationId: getMarketplaceCategories
+      tags: [marketplace]
+      summary: Get marketplace categories
+      responses:
+        "200":
+          description: Categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+
+  # ─── COMMUNITIES ──────────────────────────────────────────────────────────────
+  /communities:
+    get:
+      operationId: getCommunities
+      tags: [communities]
+      summary: Get communities
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: joined
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Communities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Community"
+    post:
+      operationId: createCommunity
+      tags: [communities]
+      summary: Create a community
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommunityInput"
+      responses:
+        "201":
+          description: Created community
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Community"
+
+  /communities/{communityId}:
+    get:
+      operationId: getCommunity
+      tags: [communities]
+      summary: Get a community
+      parameters:
+        - name: communityId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Community
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Community"
+
+  /communities/{communityId}/join:
+    post:
+      operationId: joinCommunity
+      tags: [communities]
+      summary: Join a community
+      parameters:
+        - name: communityId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionResult"
+
+  /communities/suggested:
+    get:
+      operationId: getSuggestedCommunities
+      tags: [communities]
+      summary: Get suggested communities
+      responses:
+        "200":
+          description: Suggested communities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Community"
+
+  # ─── EVENTS ──────────────────────────────────────────────────────────────────
+  /events:
+    get:
+      operationId: getEvents
+      tags: [events]
+      summary: Get events
+      parameters:
+        - name: upcoming
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Event"
+    post:
+      operationId: createEvent
+      tags: [events]
+      summary: Create an event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventInput"
+      responses:
+        "201":
+          description: Created event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+
+  /events/{eventId}:
+    get:
+      operationId: getEvent
+      tags: [events]
+      summary: Get an event
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Event"
+
+  /events/{eventId}/attend:
+    post:
+      operationId: attendEvent
+      tags: [events]
+      summary: Attend an event
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionResult"
+
+  # ─── STREAMS ─────────────────────────────────────────────────────────────────
+  /streams:
+    get:
+      operationId: getLiveStreams
+      tags: [streams]
+      summary: Get active live streams
+      responses:
+        "200":
+          description: Live streams
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Stream"
+    post:
+      operationId: startStream
+      tags: [streams]
+      summary: Start a live stream
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StreamInput"
+      responses:
+        "201":
+          description: Created stream
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Stream"
+
+  /streams/{streamId}:
+    get:
+      operationId: getStream
+      tags: [streams]
+      summary: Get a stream
+      parameters:
+        - name: streamId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Stream
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Stream"
+
+  /streams/{streamId}/end:
+    post:
+      operationId: endStream
+      tags: [streams]
+      summary: End a live stream
+      parameters:
+        - name: streamId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionResult"
+
+  # ─── AI ──────────────────────────────────────────────────────────────────────
+  /ai/generate-post:
+    post:
+      operationId: generatePost
+      tags: [ai]
+      summary: Generate a post using AI
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GeneratePostInput"
+      responses:
+        "200":
+          description: Generated post text
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GeneratedContent"
+
+  /ai/trending-topics:
+    get:
+      operationId: getTrendingTopics
+      tags: [ai]
+      summary: Get trending topics and hashtags
+      responses:
+        "200":
+          description: Trending topics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrendingTopic"
+
+  # ─── DASHBOARD (wow endpoints) ─────────────────────────────────────────────
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [users]
+      summary: Get dashboard summary stats
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required: [status]
+
+    # ─── USER SCHEMAS ─────────────────────────────────────────────────────────
+    User:
+      type: object
+      required: [id, clerkId, username, displayName, createdAt]
+      properties:
+        id:
+          type: string
+        clerkId:
+          type: string
+        username:
+          type: string
+        displayName:
+          type: string
+        bio:
+          type: ["string", "null"]
+        avatarUrl:
+          type: ["string", "null"]
+        coverUrl:
+          type: ["string", "null"]
+        location:
+          type: ["string", "null"]
+        website:
+          type: ["string", "null"]
+        role:
+          type: string
+          enum: [user, creator, company, recruiter, influencer, moderator, admin]
+        isVerified:
+          type: boolean
+        isPremium:
+          type: boolean
+        followersCount:
+          type: integer
+        followingCount:
+          type: integer
+        postsCount:
+          type: integer
+        isFollowing:
+          type: boolean
+        birthDate:
+          type: ["string", "null"]
+        gender:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        skills:
+          type: array
+          items:
+            $ref: '#/components/schemas/Skill'
+        experience:
+          type: array
+          items:
+            $ref: '#/components/schemas/Experience'
+        education:
+          type: array
+          items:
+            $ref: '#/components/schemas/Education'
+        languages:
+          type: array
+          items:
+            $ref: '#/components/schemas/Language'
+        socialLinks:
+          type: array
+          items:
+            $ref: '#/components/schemas/SocialLink'
+        createdAt:
+          type: string
+
+    UserUpdate:
+      type: object
+      properties:
+        displayName:
+          type: string
+        bio:
+          type: string
+        location:
+          type: string
+        website:
+          type: string
+        avatarUrl:
+          type: string
+        coverUrl:
+          type: string
+        birthDate:
+          type: string
+        gender:
+          type: string
+          enum: [male, female, non_binary, other, prefer_not_to_say]
+        phone:
+          type: string
+        role:
+          type: string
+          enum: [user, creator, company, recruiter, influencer, moderator, admin]
+        skills:
+          type: array
+          items:
+            $ref: '#/components/schemas/SkillInput'
+        experience:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExperienceInput'
+        education:
+          type: array
+          items:
+            $ref: '#/components/schemas/EducationInput'
+        languages:
+          type: array
+          items:
+            $ref: '#/components/schemas/LanguageInput'
+        socialLinks:
+          type: array
+          items:
+            $ref: '#/components/schemas/SocialLinkInput'
+
+    UserStats:
+      type: object
+      required: [followersCount, followingCount, postsCount, likesReceived, viewsReceived]
+      properties:
+        followersCount:
+          type: integer
+        followingCount:
+          type: integer
+        postsCount:
+          type: integer
+        likesReceived:
+          type: integer
+        viewsReceived:
+          type: integer
+
+    FollowResult:
+      type: object
+      required: [following, followersCount]
+      properties:
+        following:
+          type: boolean
+        followersCount:
+          type: integer
+
+    FriendRequestResult:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+
+    # ─── POST SCHEMAS ─────────────────────────────────────────────────────────
+    Post:
+      type: object
+      required: [id, authorId, author, content, postType, createdAt]
+      properties:
+        id:
+          type: string
+        authorId:
+          type: string
+        author:
+          $ref: "#/components/schemas/User"
+        content:
+          type: string
+        postType:
+          type: string
+          enum: [text, image, video, audio, reel, poll, gif]
+        mediaUrls:
+          type: array
+          items:
+            type: string
+        thumbnailUrl:
+          type: ["string", "null"]
+        hashtags:
+          type: array
+          items:
+            type: string
+        likesCount:
+          type: integer
+        commentsCount:
+          type: integer
+        sharesCount:
+          type: integer
+        userReaction:
+          type: ["string", "null"]
+        isSaved:
+          type: boolean
+        isShared:
+          type: boolean
+        viewsCount:
+          type: integer
+        createdAt:
+          type: string
+
+    PostInput:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+        postType:
+          type: string
+          enum: [text, image, video, audio, reel, poll, gif]
+        mediaUrls:
+          type: array
+          items:
+            type: string
+        hashtags:
+          type: array
+          items:
+            type: string
+
+    PostPage:
+      type: object
+      required: [posts]
+      properties:
+        posts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Post"
+        nextCursor:
+          type: ["string", "null"]
+        hasMore:
+          type: boolean
+
+    Comment:
+      type: object
+      required: [id, postId, authorId, author, content, createdAt]
+      properties:
+        id:
+          type: string
+        postId:
+          type: string
+        authorId:
+          type: string
+        author:
+          $ref: "#/components/schemas/User"
+        content:
+          type: string
+        likesCount:
+          type: integer
+        parentId:
+          type: ["string", "null"]
+        replies:
+          type: array
+          items:
+            $ref: "#/components/schemas/Comment"
+        createdAt:
+          type: string
+
+    CommentInput:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+        parentId:
+          type: string
+
+    ReactionInput:
+      type: object
+      required: [reaction]
+      properties:
+        reaction:
+          type: string
+          enum: [like, love, haha, wow, sad, angry]
+
+    ReactionResult:
+      type: object
+      required: [reaction, likesCount]
+      properties:
+        reaction:
+          type: ["string", "null"]
+        likesCount:
+          type: integer
+
+    SaveResult:
+      type: object
+      required: [saved]
+      properties:
+        saved:
+          type: boolean
+
+    ShareResult:
+      type: object
+      required: [shared, sharesCount]
+      properties:
+        shared:
+          type: boolean
+        sharesCount:
+          type: integer
+
+    # ─── STORY SCHEMAS ────────────────────────────────────────────────────────
+    Story:
+      type: object
+      required: [id, authorId, author, mediaUrl, mediaType, createdAt, expiresAt]
+      properties:
+        id:
+          type: string
+        authorId:
+          type: string
+        author:
+          $ref: "#/components/schemas/User"
+        mediaUrl:
+          type: string
+        mediaType:
+          type: string
+          enum: [image, video]
+        text:
+          type: ["string", "null"]
+        viewsCount:
+          type: integer
+        isViewed:
+          type: boolean
+        createdAt:
+          type: string
+        expiresAt:
+          type: string
+
+    StoryGroup:
+      type: object
+      required: [user, stories, hasUnviewed]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        stories:
+          type: array
+          items:
+            $ref: "#/components/schemas/Story"
+        hasUnviewed:
+          type: boolean
+
+    StoryInput:
+      type: object
+      required: [mediaUrl, mediaType]
+      properties:
+        mediaUrl:
+          type: string
+        mediaType:
+          type: string
+          enum: [image, video]
+        text:
+          type: string
+
+    ViewResult:
+      type: object
+      required: [viewed]
+      properties:
+        viewed:
+          type: boolean
+
+    # ─── MESSAGE SCHEMAS ──────────────────────────────────────────────────────
+    Conversation:
+      type: object
+      required: [id, participants, createdAt]
+      properties:
+        id:
+          type: string
+        participants:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        lastMessage:
+          $ref: "#/components/schemas/Message"
+        isGroup:
+          type: boolean
+        groupName:
+          type: ["string", "null"]
+        unreadCount:
+          type: integer
+        createdAt:
+          type: string
+
+    ConversationInput:
+      type: object
+      required: [participantIds]
+      properties:
+        participantIds:
+          type: array
+          items:
+            type: string
+        isGroup:
+          type: boolean
+        groupName:
+          type: string
+
+    Message:
+      type: object
+      required: [id, conversationId, senderId, sender, content, createdAt]
+      properties:
+        id:
+          type: string
+        conversationId:
+          type: string
+        senderId:
+          type: string
+        sender:
+          $ref: "#/components/schemas/User"
+        content:
+          type: string
+        mediaUrl:
+          type: ["string", "null"]
+        mediaType:
+          type: ["string", "null"]
+        isRead:
+          type: boolean
+        isEdited:
+          type: boolean
+        createdAt:
+          type: string
+
+    MessageInput:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+        mediaUrl:
+          type: string
+        mediaType:
+          type: string
+
+    # ─── NOTIFICATION SCHEMAS ─────────────────────────────────────────────────
+    Notification:
+      type: object
+      required: [id, userId, type, title, isRead, createdAt]
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        type:
+          type: string
+          enum: [like, comment, follow, mention, share, job_match, message, system]
+        title:
+          type: string
+        body:
+          type: ["string", "null"]
+        actionUrl:
+          type: ["string", "null"]
+        actor:
+          $ref: "#/components/schemas/User"
+        isRead:
+          type: boolean
+        createdAt:
+          type: string
+
+    UnreadCount:
+      type: object
+      required: [count]
+      properties:
+        count:
+          type: integer
+
+    ActionResult:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+        message:
+          type: ["string", "null"]
+
+    # ─── JOB SCHEMAS ─────────────────────────────────────────────────────────
+    Job:
+      type: object
+      required: [id, title, company, location, createdAt]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        company:
+          type: string
+        companyLogoUrl:
+          type: ["string", "null"]
+        location:
+          type: string
+        isRemote:
+          type: boolean
+        salary:
+          type: ["string", "null"]
+        jobType:
+          type: string
+          enum: [full_time, part_time, contract, freelance, internship]
+        description:
+          type: string
+        requirements:
+          type: array
+          items:
+            type: string
+        applicantsCount:
+          type: integer
+        isSaved:
+          type: boolean
+        hasApplied:
+          type: boolean
+        postedById:
+          type: string
+        createdAt:
+          type: string
+
+    JobInput:
+      type: object
+      required: [title, company, location, description, jobType]
+      properties:
+        title:
+          type: string
+        company:
+          type: string
+        location:
+          type: string
+        isRemote:
+          type: boolean
+        salary:
+          type: string
+        jobType:
+          type: string
+          enum: [full_time, part_time, contract, freelance, internship]
+        description:
+          type: string
+        requirements:
+          type: array
+          items:
+            type: string
+
+    JobApplication:
+      type: object
+      required: [id, jobId, applicantId, status, createdAt]
+      properties:
+        id:
+          type: string
+        jobId:
+          type: string
+        applicantId:
+          type: string
+        coverLetter:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [pending, reviewing, shortlisted, rejected, hired]
+        createdAt:
+          type: string
+
+    JobApplicationInput:
+      type: object
+      properties:
+        coverLetter:
+          type: string
+
+    # ─── MARKETPLACE SCHEMAS ──────────────────────────────────────────────────
+    Listing:
+      type: object
+      required: [id, title, price, category, sellerId, seller, condition, createdAt]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        currency:
+          type: string
+        category:
+          type: string
+        condition:
+          type: string
+          enum: [new, like_new, good, fair, for_parts]
+        imageUrls:
+          type: array
+          items:
+            type: string
+        location:
+          type: ["string", "null"]
+        sellerId:
+          type: string
+        seller:
+          $ref: "#/components/schemas/User"
+        isAvailable:
+          type: boolean
+        viewsCount:
+          type: integer
+        createdAt:
+          type: string
+
+    ListingInput:
+      type: object
+      required: [title, price, category, condition]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        category:
+          type: string
+        condition:
+          type: string
+          enum: [new, like_new, good, fair, for_parts]
+        imageUrls:
+          type: array
+          items:
+            type: string
+        location:
+          type: string
+
+    Category:
+      type: object
+      required: [id, name, icon]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        icon:
+          type: string
+        listingsCount:
+          type: integer
+
+    # ─── COMMUNITY SCHEMAS ────────────────────────────────────────────────────
+    Community:
+      type: object
+      required: [id, name, slug, visibility, membersCount, createdAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: ["string", "null"]
+        coverUrl:
+          type: ["string", "null"]
+        avatarUrl:
+          type: ["string", "null"]
+        visibility:
+          type: string
+          enum: [public, private, premium]
+        membersCount:
+          type: integer
+        postsCount:
+          type: integer
+        isJoined:
+          type: boolean
+        isModerator:
+          type: boolean
+        createdAt:
+          type: string
+
+    CommunityInput:
+      type: object
+      required: [name, visibility]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        visibility:
+          type: string
+          enum: [public, private, premium]
+        coverUrl:
+          type: string
+
+    # ─── EVENT SCHEMAS ────────────────────────────────────────────────────────
+    Event:
+      type: object
+      required: [id, title, organizerId, organizer, startsAt, eventType, createdAt]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        coverUrl:
+          type: ["string", "null"]
+        organizerId:
+          type: string
+        organizer:
+          $ref: "#/components/schemas/User"
+        startsAt:
+          type: string
+        endsAt:
+          type: ["string", "null"]
+        eventType:
+          type: string
+          enum: [online, in_person, hybrid]
+        location:
+          type: ["string", "null"]
+        streamUrl:
+          type: ["string", "null"]
+        attendeesCount:
+          type: integer
+        isAttending:
+          type: boolean
+        createdAt:
+          type: string
+
+    EventInput:
+      type: object
+      required: [title, startsAt, eventType]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        coverUrl:
+          type: string
+        startsAt:
+          type: string
+        endsAt:
+          type: string
+        eventType:
+          type: string
+          enum: [online, in_person, hybrid]
+        location:
+          type: string
+
+    # ─── STREAM SCHEMAS ───────────────────────────────────────────────────────
+    Stream:
+      type: object
+      required: [id, title, hostId, host, isLive, viewersCount, createdAt]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        thumbnailUrl:
+          type: ["string", "null"]
+        hostId:
+          type: string
+        host:
+          $ref: "#/components/schemas/User"
+        isLive:
+          type: boolean
+        viewersCount:
+          type: integer
+        peakViewers:
+          type: integer
+        category:
+          type: ["string", "null"]
+        startedAt:
+          type: ["string", "null"]
+        endedAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    StreamInput:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        thumbnailUrl:
+          type: string
+        category:
+          type: string
+
+    # ─── AI SCHEMAS ───────────────────────────────────────────────────────────
+    GeneratePostInput:
+      type: object
+      required: [topic]
+      properties:
+        topic:
+          type: string
+        tone:
+          type: string
+          enum: [professional, casual, funny, inspirational]
+        includeHashtags:
+          type: boolean
+
+    GeneratedContent:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+        suggestedHashtags:
+          type: array
+          items:
+            type: string
+
+    TrendingTopic:
+      type: object
+      required: [topic, postsCount]
+      properties:
+        topic:
+          type: string
+        postsCount:
+          type: integer
+        trend:
+          type: string
+          enum: [rising, stable, falling]
+
+    # ─── DASHBOARD SCHEMAS ────────────────────────────────────────────────────
+    DashboardSummary:
+      type: object
+      required: [totalUsers, activePosts, onlineNow, newNotifications]
+      properties:
+        totalUsers:
+          type: integer
+        activePosts:
+          type: integer
+        onlineNow:
+          type: integer
+        newNotifications:
+          type: integer
+        trendingHashtags:
+          type: array
+          items:
+            type: string
+        suggestedUsers:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        upcomingEvents:
+          type: array
+          items:
+            $ref: "#/components/schemas/Event"
+
+    # ─── PROFILE DETAIL SCHEMAS ───────────────────────────────────────────
+    Skill:
+      type: object
+      required: [id, skill, level]
+      properties:
+        id:
+          type: string
+        skill:
+          type: string
+        level:
+          type: string
+          enum: [beginner, intermediate, advanced, expert]
+    SkillInput:
+      type: object
+      required: [skill]
+      properties:
+        skill:
+          type: string
+        level:
+          type: string
+          enum: [beginner, intermediate, advanced, expert]
+
+    Experience:
+      type: object
+      required: [id, company, title]
+      properties:
+        id:
+          type: string
+        company:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        startDate:
+          type: string
+        endDate:
+          type: string
+        current:
+          type: boolean
+    ExperienceInput:
+      type: object
+      required: [company, title]
+      properties:
+        company:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        startDate:
+          type: string
+        endDate:
+          type: string
+        current:
+          type: boolean
+
+    Education:
+      type: object
+      required: [id, institution, degree]
+      properties:
+        id:
+          type: string
+        institution:
+          type: string
+        degree:
+          type: string
+        field:
+          type: string
+        startYear:
+          type: string
+        endYear:
+          type: string
+        current:
+          type: boolean
+    EducationInput:
+      type: object
+      required: [institution, degree]
+      properties:
+        institution:
+          type: string
+        degree:
+          type: string
+        field:
+          type: string
+        startYear:
+          type: string
+        endYear:
+          type: string
+        current:
+          type: boolean
+
+    Language:
+      type: object
+      required: [id, language, proficiency]
+      properties:
+        id:
+          type: string
+        language:
+          type: string
+        proficiency:
+          type: string
+          enum: [basic, conversational, fluent, native]
+    LanguageInput:
+      type: object
+      required: [language]
+      properties:
+        language:
+          type: string
+        proficiency:
+          type: string
+          enum: [basic, conversational, fluent, native]
+
+    SocialLink:
+      type: object
+      required: [id, platform, url]
+      properties:
+        id:
+          type: string
+        platform:
+          type: string
+        url:
+          type: string
+    SocialLinkInput:
+      type: object
+      required: [platform, url]
+      properties:
+        platform:
+          type: string
+        url:
+          type: string
+
+    # ─── STORAGE SCHEMAS ───────────────────────────────────────────────────
+    UploadUrlRequest:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        size:
+          type: integer
+          minimum: 1
+        contentType:
+          type: string
+          minLength: 1
+    UploadUrlResponse:
+      type: object
+      required: [uploadURL, objectPath]
+      properties:
+        uploadURL:
+          type: string
+          format: uri
+        objectPath:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/UploadUrlRequest'
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    # ─── FRIEND REQUEST ───────────────────────────────────────────────────
+    FriendRequest:
+      type: object
+      required: [id, requesterId, addresseeId, status, createdAt]
+      properties:
+        id:
+          type: string
+        requesterId:
+          type: string
+        addresseeId:
+          type: string
+        status:
+          type: string
+          enum: [pending, accepted, rejected]
+        createdAt:
+          type: string

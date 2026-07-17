@@ -1,0 +1,405 @@
+╔══════════════════════════════════════════════════════════════╗
+║                RED SOCIAL COMPLETA TIPO FACEBOOK            ║
+║         + EMPLEOS + MARKETPLACE + STREAMING + IA            ║
+╚══════════════════════════════════════════════════════════════╝
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📌 DESCRIPCIÓN GENERAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+La plataforma será una red social moderna tipo Facebook,
+mezclada con funcionalidades de:
+
+• LinkedIn (empleos y networking)
+• TikTok (reels y contenido viral)
+• Discord (comunidades y chats)
+• Marketplace (compra y venta)
+• Streaming en vivo
+• Inteligencia Artificial integrada
+
+Diseñada principalmente para dispositivos móviles,
+ultra rápida, moderna y altamente escalable.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+👤 SISTEMA DE USUARIOS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✔ Registro con:
+  • Email
+  • Teléfono
+  • Google
+  • Apple
+  • Facebook
+
+✔ Inicio de sesión seguro
+✔ Recuperación de contraseña
+✔ Verificación OTP
+✔ Autenticación 2FA
+✔ Captcha anti bots
+✔ Login biométrico móvil
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+👤 PERFILES DE USUARIO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✔ Foto de perfil
+✔ Foto de portada
+✔ Biografía
+✔ Ubicación
+✔ Edad
+✔ Redes sociales
+✔ Sitio web
+✔ Habilidades
+✔ Experiencia laboral
+✔ Estudios
+✔ Idiomas
+✔ Portafolio
+✔ CV descargable
+✔ Perfil verificado
+✔ Insignias y niveles
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+👥 TIPOS DE CUENTAS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✔ Usuario normal
+✔ Creador de contenido
+✔ Empresa
+✔ Reclutador
+✔ Influencer
+✔ Moderador
+✔ Administrador
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📰 FEED PRINCIPAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✔ Publicaciones de:
+  • Texto
+  • Imágenes
+  • Videos
+  • Audios
+  • GIFs
+  • PDFs
+  • Encuestas
+  • Reels
+  • Stories
+
+✔ Likes y reacciones
+✔ Comentarios
+✔ Respuestas anidadas
+✔ Compartir publicaciones
+✔ Guardar publicaciones
+✔ Favoritos
+✔ Hashtags
+✔ Menciones
+✔ Etiquetado de usuarios
+✔ Publicaciones programadas
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🤖 ALGORITMO INTELIGENTE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✔ Feed personalizado
+✔ Contenido recomendado por IA
+✔ Tendencias
+✔ Contenido viral
+✔ Detección de spam
+✔ Detección de bots
+✔ Moderación automática IA
+✔ Recomendaciones inteligentes
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+👫 SISTEMA DE AMIGOS Y SEGUIDORES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✔ Solicitudes de amistad
+✔ Seguidores
+✔ Mejores amigos
+✔ Usuarios restringidos
+✔ Bloqueos
+✔ Silenciar usuarios
+✔ Seguimiento de actividad
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💬 CHAT Y MENSAJERÍA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✔ Chat en tiempo real
+✔ Mensajes privados
+✔ Chats grupales
+✔ Envío de:
+  • Fotos
+  • Videos
+  • Audios
+  • Archivos
+  • Stickers
+  • GIFs
+
+✔ Reacciones a mensajes
+✔ Editar mensajes
+✔ Eliminar mensajes
+✔ Mensajes temporales
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📞 LLAMADAS Y VIDEOLLAMADAS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✔ Audio llamadas
+✔ Videollamadas
+✔ Compartir pantalla
+✔ Salas grupales
+✔ Streaming grupal
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📸 STORIES Y REELS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✔ Stories de 24 horas
+✔ Música integrada
+✔ Encuestas
+✔ Preguntas
+✔ Cuenta regresiva
+✔ Reacciones rápidas
+
+✔ Reels estilo TikTok
+✔ Editor integrado
+✔ Filtros
+✔ Efectos
+✔ Subtítulos IA
+✔ Viralización automática
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💼 SISTEMA DE EMPLEOS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✔ Crear hoja de vida
+✔ Perfil profesional
+✔ Aplicar a vacantes
+✔ Guardar empleos
+✔ Empleos cercanos
+✔ Trabajo remoto
+✔ Freelance
+✔ Video presentación
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🏢 FUNCIONES PARA EMPRESAS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✔ Crear página empresarial
+✔ Publicar empleos
+✔ Publicar anuncios
+✔ Buscar candidatos
+✔ IA para selección
+✔ Gestión de candidatos
+✔ Calendario de entrevistas
+✔ Estadísticas empresariales
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🛒 MARKETPLACE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✔ Compra y venta
+✔ Publicar productos
+✔ Publicar servicios
+✔ Chat comprador-vendedor
+✔ Sistema de pagos
+✔ Calificaciones
+✔ Productos destacados
+
+✔ Categorías:
+  • Vehículos
+  • Casas
+  • Tecnología
+  • Servicios
+  • Freelance
+  • Moda
+  • Hogar
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+👥 GRUPOS Y COMUNIDADES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✔ Comunidades públicas
+✔ Comunidades privadas
+✔ Comunidades premium
+✔ Moderadores
+✔ Eventos
+✔ Chats internos
+✔ Cursos
+✔ Streaming
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📅 EVENTOS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✔ Crear eventos
+✔ Eventos online
+✔ Eventos presenciales
+✔ Recordatorios
+✔ Tickets QR
+✔ Streaming de eventos
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📡 STREAMING EN VIVO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✔ Lives en tiempo real
+✔ Donaciones
+✔ Super chats
+✔ Invitados en vivo
+✔ Replay de transmisiones
+✔ Monetización
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🧠 INTELIGENCIA ARTIFICIAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✔ IA para generar publicaciones
+✔ Traducción automática
+✔ Corrección de textos
+✔ Recomendaciones inteligentes
+✔ IA para empleos
+✔ Moderación automática
+✔ Detección de toxicidad
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💰 MONETIZACIÓN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✔ Publicidad interna
+✔ Membresías premium
+✔ Publicaciones patrocinadas
+✔ Boost de publicaciones
+✔ Marketplace premium
+✔ Monetización para creadores
+✔ Donaciones
+✔ Suscripciones
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🛡 PANEL ADMINISTRATIVO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✔ Gestión de usuarios
+✔ Gestión de publicaciones
+✔ Gestión de reportes
+✔ Gestión de anuncios
+✔ Estadísticas globales
+✔ Logs en tiempo real
+✔ Seguridad avanzada
+✔ Gestión de roles
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🛡 FUNCIONES DE MODERACIÓN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✔ Revisar reportes
+✔ Eliminar contenido
+✔ Suspender usuarios
+✔ Shadow bans
+✔ Revisar apelaciones
+✔ Moderación IA
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 ANALÍTICAS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✔ Usuarios activos
+✔ Tiempo de sesión
+✔ Engagement
+✔ Publicaciones virales
+✔ Estadísticas de empresas
+✔ Ingresos
+✔ Crecimiento de usuarios
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔒 SEGURIDAD
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✔ JWT/Auth
+✔ Encriptación avanzada
+✔ Protección anti bots
+✔ Protección DDOS
+✔ Backups automáticos
+✔ Verificación de dispositivos
+✔ Detección de fraude
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⭐ FUNCIONES PREMIUM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✔ Perfil destacado
+✔ Mayor visibilidad
+✔ Ver quién visitó tu perfil
+✔ Estadísticas avanzadas
+✔ Más almacenamiento
+✔ Prioridad en publicaciones
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📱 APLICACIÓN MÓVIL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✔ Android
+✔ iPhone
+✔ Push notifications
+✔ Cámara integrada
+✔ Subidas rápidas
+✔ Modo offline parcial
+✔ Geolocalización
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚀 FUNCIONES FUTURISTAS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✔ Avatares IA
+✔ Asistente virtual IA
+✔ Traducción en tiempo real
+✔ Realidad aumentada
+✔ Wallet digital
+✔ Sistema de recompensas
+✔ Gamificación
+✔ Insignias y niveles
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+👑 ROLES Y PERMISOS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+👤 Usuario:
+✔ Publicar
+✔ Comentar
+✔ Reaccionar
+✔ Aplicar empleos
+✔ Comprar y vender
+
+🎥 Creador:
+✔ Monetización
+✔ Lives
+✔ Reels avanzados
+✔ Suscriptores
+
+🏢 Empresa:
+✔ Publicar empleos
+✔ Crear anuncios
+✔ Página empresarial
+
+💼 Reclutador:
+✔ Filtrar candidatos
+✔ Entrevistas
+✔ Gestión de aplicaciones
+
+🛡 Moderador:
+✔ Revisar contenido
+✔ Suspender usuarios
+✔ Revisar reportes
+
+👑 Administrador:
+✔ Control total del sistema
+✔ Seguridad
+✔ Monetización
+✔ Estadísticas
+✔ Configuración global
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Escribir mensaje
