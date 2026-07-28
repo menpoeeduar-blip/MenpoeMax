@@ -15,7 +15,7 @@ import { sendPasswordResetEmail, updatePassword, EmailAuthProvider, reauthentica
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import {
-  Settings, User, Shield, Bell, Heart, Globe, Eye, Lock, Users, FileText,
+  Settings, User, Shield, Bell, BellOff, Heart, Globe, Eye, Lock, Users, FileText,
   MapPin, Smartphone, CreditCard, Scale, ChevronRight, CheckCircle2, Baby,
   Sparkles, Tag, Radio, Briefcase, Cookie, BookOpen, Activity, Download, Upload,
 } from "lucide-react";
@@ -361,23 +361,74 @@ export default function SettingsPage() {
         );
 
       case "notifications":
+        const getQuietModeState = () => {
+          const until = localStorage.getItem("quiet_mode_until");
+          return until ? Number(until) > Date.now() : false;
+        };
+        const handleQuietToggle = (checked: boolean) => {
+          if (checked) {
+            const until = Date.now() + 60 * 60000;
+            localStorage.setItem("quiet_mode_until", String(until));
+            toast({ title: "Modo silencioso activado", description: "Las notificaciones se pausarán por 1 hora." });
+          } else {
+            localStorage.removeItem("quiet_mode_until");
+            toast({ title: "Modo silencioso desactivado", description: "Se han reactivado las notificaciones." });
+          }
+          window.dispatchEvent(new Event("storage"));
+        };
+
         return (
-          <div className="glass-panel rounded-2xl p-5">
-            {Object.entries(s.notifications).map(([key, val]) => (
+          <div className="space-y-4">
+            <div className="glass-panel rounded-2xl p-5 space-y-3">
+              <h3 className="text-sm font-semibold neon-text flex items-center gap-2">
+                <BellOff className="w-4 h-4 text-purple-400" /> Modo Silencioso (Snooze)
+              </h3>
+              <p className="text-xs text-muted-foreground">Pausa temporalmente las alertas y las insignias de notificación en la interfaz.</p>
               <SwitchRow
-                key={key}
-                label={key === "likes" ? "Me gusta" : key === "comments" ? "Comentarios" : key === "follows" ? "Nuevos seguidores" : key === "messages" ? "Mensajes" : key === "birthdays" ? "Cumpleaños" : key === "memories" ? "Recuerdos" : key === "emailDigest" ? "Resumen por correo" : key === "pushEnabled" ? "Notificaciones push" : "Sistema"}
-                checked={!!val}
-                onCheckedChange={(v) => patch({ notifications: { ...s.notifications, [key]: v } })}
+                label="Activar Modo Silencioso"
+                description="Pausar todas las alertas por 1 hora"
+                checked={getQuietModeState()}
+                onCheckedChange={handleQuietToggle}
               />
-            ))}
-            <Link href="/notifications" className="block mt-4"><Button variant="outline" className="w-full rounded-xl">Ver bandeja de notificaciones</Button></Link>
+            </div>
+
+            <div className="glass-panel rounded-2xl p-5">
+              <h3 className="text-sm font-semibold neon-text mb-3">Preferencias de Alertas</h3>
+              {Object.entries(s.notifications).map(([key, val]) => (
+                <SwitchRow
+                  key={key}
+                  label={key === "likes" ? "Me gusta" : key === "comments" ? "Comentarios" : key === "follows" ? "Nuevos seguidores" : key === "messages" ? "Mensajes" : key === "birthdays" ? "Cumpleaños" : key === "memories" ? "Recuerdos" : key === "emailDigest" ? "Resumen por correo" : key === "pushEnabled" ? "Notificaciones push" : "Sistema"}
+                  checked={!!val}
+                  onCheckedChange={(v) => patch({ notifications: { ...s.notifications, [key]: v } })}
+                />
+              ))}
+              <Link href="/notifications" className="block mt-4"><Button variant="outline" className="w-full rounded-xl">Ver bandeja de notificaciones</Button></Link>
+            </div>
           </div>
         );
 
       case "accessibility":
+        const currentTheme = localStorage.getItem("ambient_theme") || "default";
+        const handleThemeChange = (v: string) => {
+          localStorage.setItem("ambient_theme", v);
+          window.dispatchEvent(new Event("storage"));
+          toast({ title: "Tema actualizado", description: `El tema ambiental se cambió` });
+        };
         return (
-          <div className="glass-panel rounded-2xl p-5">
+          <div className="glass-panel rounded-2xl p-5 space-y-3">
+            <SelectRow
+              label="Tema de fondo ambiental"
+              description="Elige la iluminación de la interfaz para tu pantalla"
+              value={currentTheme}
+              options={[
+                { value: "default", label: "Predeterminado (Espacial)" },
+                { value: "obsidian", label: "Negro Absoluto (OLED)" },
+                { value: "cyberpunk", label: "Púrpura Neón (Cyberpunk)" },
+                { value: "midnight", label: "Espacial Profundo (Midnight)" },
+              ]}
+              onChange={handleThemeChange}
+            />
+            <hr className="border-border/30 my-2" />
             <SwitchRow label="Reducir animaciones" description="Menos movimiento en la interfaz" checked={s.accessibility.reduceMotion} onCheckedChange={(v) => patch({ accessibility: { ...s.accessibility, reduceMotion: v } })} />
             <SwitchRow label="Texto más grande" checked={s.accessibility.largeText} onCheckedChange={(v) => patch({ accessibility: { ...s.accessibility, largeText: v } })} />
             <SwitchRow label="Alto contraste" checked={s.accessibility.highContrast} onCheckedChange={(v) => patch({ accessibility: { ...s.accessibility, highContrast: v } })} />

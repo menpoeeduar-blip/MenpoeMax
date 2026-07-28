@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useUser, useClerk } from "@clerk/react";
 import {
-  Home, Compass, PlaySquare, MessageSquare, Bell,
+  Home, Compass, PlaySquare, MessageSquare, Bell, BellOff,
   Briefcase, ShoppingBag, Users, Calendar, Radio, Menu,
   LogOut, UserCog, Moon, Sun, UserPlus,
   Image, Bookmark, Building2, BarChart3, Shield, HelpCircle,
@@ -13,11 +13,11 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { PwaInstallPrompt } from "@/components/PwaInstallPrompt";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AstralBackground } from "@/components/AstralBackground";
 import { PageTransition } from "@/components/PageTransition";
 import { useGetMe, useGetUnreadNotificationsCount, useIsAdmin } from "@workspace/api-client-react";
@@ -69,14 +69,14 @@ function profileHubSections(profileId: string) {
   return PROFILE_SECTIONS.map((s) => ({ ...s, href: `${base}?tab=${s.href}` }));
 }
 
-function NavLink({ item, location }: { item: { icon: typeof Home; label: string; href: string; badge?: string }; location: string }) {
+function NavLink({ item, location, onClick }: { item: { icon: typeof Home; label: string; href: string; badge?: string }; location: string; onClick?: () => void }) {
   const [pathOnly, queryPart] = item.href.split("?");
   const currentSearch = typeof window !== "undefined" ? window.location.search : "";
   const isActive = queryPart
     ? location === pathOnly && currentSearch.includes(queryPart)
     : location === item.href || location.startsWith(item.href + "/");
   return (
-    <Link href={item.href} className={cn(
+    <Link href={item.href} onClick={onClick} className={cn(
       "flex items-center gap-3 px-3 py-2 rounded-xl transition-all text-sm",
       isActive ? "bg-primary/25 text-primary shadow-[0_0_16px_hsl(var(--primary)/0.455)] neon-text" : "text-muted-foreground hover:bg-white/8 hover:text-primary/95"
     )}>
@@ -92,12 +92,14 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const { user } = useUser();
   const { signOut } = useClerk();
   const [darkMode, setDarkMode] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { data: unreadCount } = useGetUnreadNotificationsCount();
   const { data: me } = useGetMe();
   const { data: isAdmin } = useIsAdmin();
-  const profileId = me?.id || user?.id || "";
+  const profileId = (me as any)?.id || user?.id || "";
   const headerAvatar =
-    me?.avatarUrl || user?.imageUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profileId || "guest"}`;
+    (me as any)?.avatarUrl || user?.imageUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profileId || "guest"}`;
+
   const profileHref = profileId ? `/profile/${profileId}` : "/profile";
   const profileSections = profileId ? profileHubSections(profileId) : [];
   const adminItems = isAdmin
@@ -108,20 +110,56 @@ export function Shell({ children }: { children: React.ReactNode }) {
     : [];
   const isReelsPage = location === "/reels";
 
+  // ─── MODO SILENCIOSO (FEATURE 5) ───────────────────────────────────────────
+  const [isQuietActive, setIsQuietActive] = useState(false);
+  useEffect(() => {
+    const checkQuiet = () => {
+      const until = localStorage.getItem("quiet_mode_until");
+      setIsQuietActive(until ? Number(until) > Date.now() : false);
+    };
+    checkQuiet();
+    const interval = setInterval(checkQuiet, 3000);
+    window.addEventListener("storage", checkQuiet);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("storage", checkQuiet);
+    };
+  }, []);
+
+  // Ambient Theme (Feature 3)
+  const [ambientTheme, setAmbientTheme] = useState("default");
+  useEffect(() => {
+    const checkTheme = () => {
+      setAmbientTheme(localStorage.getItem("ambient_theme") || "default");
+    };
+    checkTheme();
+    window.addEventListener("storage", checkTheme);
+    return () => window.removeEventListener("storage", checkTheme);
+  }, []);
+
+  const closeMobileMenu = () => setMobileMenuOpen(false);
+
   return (
-    <div className="min-h-screen bg-transparent text-foreground relative">
-      <AstralBackground />
-      <header className="fixed top-0 z-50 w-full border-b border-primary/30 bg-background/55 backdrop-blur-xl neon-chrome overflow-hidden">
+    <div className={cn(
+      "min-h-screen text-foreground relative transition-all duration-300",
+      ambientTheme === "obsidian" ? "bg-black" :
+      ambientTheme === "cyberpunk" ? "bg-[#0c0418]" :
+      ambientTheme === "midnight" ? "bg-[#050811]" : "bg-transparent"
+    )}>
+      {ambientTheme === "default" && <AstralBackground />}
+      <header className="fixed top-0 z-50 w-full border-b border-primary/30 bg-background/55 backdrop-blur-xl neon-chrome">
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[2px] overflow-hidden">
           <div className="h-full w-1/3 animate-[neon-line-sweep_2.8s_linear_infinite] bg-gradient-to-r from-transparent via-cyan-400 to-fuchsia-500 shadow-[0_0_12px_#22d3ee]" />
         </div>
         <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between px-3 md:px-6">
           <div className="flex items-center gap-3">
-            <Sheet>
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="lg:hidden"><Menu className="w-5 h-5" /></Button>
+                <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Abrir menú"><Menu className="w-5 h-5" /></Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-80 glass-panel neon-border neon-run border-r p-0">
+              <SheetContent side="left" className="w-80 glass-panel neon-border border-r p-0 z-[200]">
+                {/* SheetTitle requerido por Radix UI para accesibilidad */}
+                <SheetTitle className="sr-only">Menú de navegación</SheetTitle>
                 <ScrollArea className="h-full p-4">
                   <div className="flex items-center gap-2 mb-6">
                     <BrandLogo size="sm" showWordmark={false} href={false} />
@@ -130,14 +168,14 @@ export function Shell({ children }: { children: React.ReactNode }) {
                     </span>
                   </div>
                   <p className="text-[10px] uppercase tracking-widest text-primary/80 mb-2 font-semibold">Navegación</p>
-                  {TOP_NAV_ITEMS.map((item) => <NavLink key={item.href} item={item} location={location} />)}
+                  {TOP_NAV_ITEMS.map((item) => <NavLink key={item.href} item={item} location={location} onClick={closeMobileMenu} />)}
                   <p className="text-[10px] uppercase tracking-widest text-accent/80 mt-4 mb-2 font-semibold">Red Social</p>
-                  {SOCIAL_SECTIONS.map((item) => <NavLink key={item.href} item={item} location={location} />)}
+                  {SOCIAL_SECTIONS.map((item) => <NavLink key={item.href} item={item} location={location} onClick={closeMobileMenu} />)}
                   <p className="text-[10px] uppercase tracking-widest text-primary/80 mt-4 mb-2 font-semibold">Negocios y Empleo</p>
-                  {BIZ_SECTIONS.map((item) => <NavLink key={item.href} item={item} location={location} />)}
+                  {BIZ_SECTIONS.map((item) => <NavLink key={item.href} item={item} location={location} onClick={closeMobileMenu} />)}
                   <p className="text-[10px] uppercase tracking-widest text-muted-foreground mt-4 mb-2 font-semibold">Más</p>
-                  {UTILITY_SECTIONS.map((item) => <NavLink key={item.href} item={item} location={location} />)}
-                  {adminItems.map((item) => <NavLink key={item.href} item={item} location={location} />)}
+                  {UTILITY_SECTIONS.map((item) => <NavLink key={item.href} item={item} location={location} onClick={closeMobileMenu} />)}
+                  {adminItems.map((item) => <NavLink key={item.href} item={item} location={location} onClick={closeMobileMenu} />)}
                 </ScrollArea>
               </SheetContent>
             </Sheet>
@@ -159,7 +197,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                   isActive ? "bg-primary/25 text-primary shadow-[0_0_18px_hsl(var(--primary)/0.455)]" : "text-muted-foreground hover:bg-white/8"
                 )}>
                   <item.icon className="w-5 h-5" />
-                  {isNotif && (unreadCount ?? 0) > 0 && (
+                  {isNotif && (unreadCount ?? 0) > 0 && !isQuietActive && (
                     <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-accent text-[9px] font-bold text-white shadow-[0_0_12px_hsl(var(--accent)/0.8)]">
                       {(unreadCount ?? 0) > 9 ? "9+" : unreadCount}
                     </span>
@@ -169,6 +207,13 @@ export function Shell({ children }: { children: React.ReactNode }) {
             })}
           </nav>
           <div className="flex items-center gap-2">
+            {/* Glowing Quiet Mode badge */}
+            {isQuietActive && (
+              <span className="flex items-center gap-1.5 text-[11px] text-purple-400 font-bold px-3 py-1 rounded-full border border-purple-500/40 bg-purple-900/20 shadow-[0_0_12px_rgba(168,85,247,0.4)] animate-pulse select-none" title="Modo Silencioso Activo">
+                <BellOff className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Silencio</span>
+              </span>
+            )}
             <button onClick={() => setDarkMode(!darkMode)} className="h-9 w-9 rounded-full glass-panel neon-border flex items-center justify-center">
               {darkMode ? <Sun className="w-4 h-4 text-primary" /> : <Moon className="w-4 h-4" />}
             </button>

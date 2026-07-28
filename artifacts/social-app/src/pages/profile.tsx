@@ -9,6 +9,11 @@ import {
   useGetUserPosts,
   useCreatePost,
   useUpdateMe,
+  useSendFriendRequest,
+  useAcceptFriendRequest,
+  useCancelFriendRequest,
+  useRemoveFriend,
+  useStartConversationWithUser,
   getGetUserQueryKey,
   getGetUserPostsQueryKey,
 } from "@workspace/api-client-react";
@@ -21,11 +26,14 @@ import {
   CheckCircle, MapPin, Link as LinkIcon, Edit3, Grid, Heart, MessageCircle,
   FileText, Briefcase, GraduationCap, Globe, Languages, Award, Calendar,
   Phone, X, Plus, Camera, ImageIcon, Star, BookOpen, Bookmark, Image, BarChart3, Sparkles,
+  UserPlus, UserCheck, Clock, Users,
 } from "lucide-react";
 import { ProfilePhotosTab } from "@/components/profile/ProfilePhotosTab";
 import { ProfileAvatarsTab } from "@/components/profile/ProfileAvatarsTab";
 import { ProfileSavedTab } from "@/components/profile/ProfileSavedTab";
 import { ProfileStatsTab } from "@/components/profile/ProfileStatsTab";
+import { CreatePostBox } from "@/components/feed/CreatePostBox";
+import { PostCard } from "@/components/feed/PostCard";
 import { useUser } from "@clerk/react";
 import { uploadFile, LOCAL_STORAGE_BUDGET_HINT } from "@/lib/upload";
 import { format } from "date-fns";
@@ -79,6 +87,10 @@ export default function Profile() {
   const followUser = useFollowUser();
   const unfollowUser = useUnfollowUser();
   const updateMe = useUpdateMe();
+  const sendFriendRequest = useSendFriendRequest();
+  const acceptFriendRequest = useAcceptFriendRequest();
+  const cancelFriendRequest = useCancelFriendRequest();
+  const removeFriend = useRemoveFriend();
   const qc = useQueryClient();
   const { toast } = useToast();
   const [wallText, setWallText] = useState("");
@@ -112,6 +124,53 @@ export default function Profile() {
   const avatarRef = useRef<HTMLInputElement>(null);
   const coverRef = useRef<HTMLInputElement>(null);
 
+  const friendStatus = (profile as any)?.friendStatus || "none";
+  const incomingRequestId = (profile as any)?.incomingRequestId;
+
+  const handleFriendAction = () => {
+    if (!targetUserId || !profile) return;
+    if (friendStatus === "friends") {
+      removeFriend.mutate(
+        { userId: targetUserId },
+        {
+          onSuccess: () => {
+            qc.invalidateQueries({ queryKey: getGetUserQueryKey(targetUserId) });
+            toast({ title: "Amigo eliminado", description: `Eliminaste a ${profile.displayName} de tus amigos.` });
+          },
+        }
+      );
+    } else if (friendStatus === "pending_sent") {
+      cancelFriendRequest.mutate(
+        { userId: targetUserId },
+        {
+          onSuccess: () => {
+            qc.invalidateQueries({ queryKey: getGetUserQueryKey(targetUserId) });
+            toast({ title: "Solicitud cancelada", description: "Cancelaste la solicitud de amistad." });
+          },
+        }
+      );
+    } else if (friendStatus === "pending_received" && incomingRequestId) {
+      acceptFriendRequest.mutate(
+        { requestId: incomingRequestId },
+        {
+          onSuccess: () => {
+            qc.invalidateQueries({ queryKey: getGetUserQueryKey(targetUserId) });
+            toast({ title: "Solicitud aceptada", description: `¡Ahora tú y ${profile.displayName} son amigos!` });
+          },
+        }
+      );
+    } else {
+      sendFriendRequest.mutate(
+        { userId: targetUserId },
+        {
+          onSuccess: () => {
+            toast({ title: "Solicitud de amistad enviada", description: `Le enviaste una solicitud a ${profile.displayName}.` });
+          },
+        }
+      );
+    }
+  };
+
   const handlePublishWall = () => {
     if (!wallText.trim() || !isOwnProfile) return;
     createPost.mutate(
@@ -128,6 +187,8 @@ export default function Profile() {
     );
   };
 
+  const createConv = useStartConversationWithUser();
+
   const handleFollow = () => {
     if (!profile) return;
     if (profile.isFollowing) {
@@ -135,6 +196,21 @@ export default function Profile() {
     } else {
       followUser.mutate({ userId: targetUserId }, { onSuccess: () => qc.invalidateQueries({ queryKey: getGetUserQueryKey(targetUserId) }) });
     }
+  };
+
+  const handleSendMessage = () => {
+    if (!targetUserId) return;
+    createConv.mutate(
+      { userId: targetUserId },
+      {
+        onSuccess: (res: any) => {
+          setLocation(`/messages?conv=${res.conversationId}`);
+        },
+        onError: () => {
+          setLocation(`/messages?user=${targetUserId}`);
+        },
+      }
+    );
   };
 
   const handleUploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -157,7 +233,7 @@ export default function Profile() {
       );
     } catch (err) {
       const msg = err instanceof Error ? err.message : "No se pudo subir la foto.";
-      toast({ title: "Error al subir", description: `${msg} ${LOCAL_STORAGE_BUDGET_HINT}` });
+      toast({ title: "Error al subir", description: msg });
     } finally { setAvatarUploading(false); }
   };
 
@@ -179,7 +255,7 @@ export default function Profile() {
       );
     } catch (err) {
       const msg = err instanceof Error ? err.message : "No se pudo subir la portada.";
-      toast({ title: "Error al subir", description: `${msg} ${LOCAL_STORAGE_BUDGET_HINT}` });
+      toast({ title: "Error al subir", description: msg });
     } finally { setCoverUploading(false); }
   };
 
@@ -307,11 +383,69 @@ export default function Profile() {
               )}
             </div>
             {!isOwnProfile && (
-              <div className="flex gap-2 mb-2">
-                <Button onClick={handleFollow} disabled={followUser.isPending || unfollowUser.isPending} variant={displayProfile.isFollowing ? "outline" : "default"} data-testid="button-follow-profile">
+              <div className="flex items-center gap-2 flex-wrap mb-2">
+                <Button
+                  size="sm"
+                  onClick={handleFollow}
+                  disabled={followUser.isPending || unfollowUser.isPending}
+                  variant={displayProfile.isFollowing ? "outline" : "default"}
+                  className="rounded-xl font-bold gap-1.5"
+                  data-testid="button-follow-profile"
+                >
+                  <UserPlus className="w-4 h-4" />
                   {displayProfile.isFollowing ? "Siguiendo" : "Seguir"}
                 </Button>
-                <Button variant="outline" data-testid="button-message-profile">Mensaje</Button>
+
+                <Button
+                  size="sm"
+                  onClick={handleFriendAction}
+                  disabled={sendFriendRequest.isPending || acceptFriendRequest.isPending || cancelFriendRequest.isPending || removeFriend.isPending}
+                  variant={friendStatus === "friends" ? "outline" : friendStatus === "pending_received" ? "default" : "outline"}
+                  className={`rounded-xl font-bold gap-1.5 ${
+                    friendStatus === "friends"
+                      ? "border-emerald-500/50 text-emerald-400"
+                      : friendStatus === "pending_sent"
+                        ? "border-amber-500/50 text-amber-400"
+                        : friendStatus === "pending_received"
+                          ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                          : ""
+                  }`}
+                  data-testid="button-friend-profile"
+                >
+                  {friendStatus === "friends" ? (
+                    <>
+                      <CheckCircle className="w-4 h-4 text-emerald-400" />
+                      Amigos
+                    </>
+                  ) : friendStatus === "pending_sent" ? (
+                    <>
+                      <Clock className="w-4 h-4 text-amber-400" />
+                      Solicitud enviada
+                    </>
+                  ) : friendStatus === "pending_received" ? (
+                    <>
+                      <UserCheck className="w-4 h-4" />
+                      Aceptar solicitud
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="w-4 h-4" />
+                      Agregar amigo
+                    </>
+                  )}
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleSendMessage}
+                  disabled={createConv.isPending}
+                  className="rounded-xl font-bold gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
+                  data-testid="button-message-profile"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  {createConv.isPending ? "Abriendo..." : "Mensaje"}
+                </Button>
               </div>
             )}
           </div>
@@ -600,24 +734,7 @@ export default function Profile() {
             </TabsList>
             <TabsContent value="posts" className="space-y-4">
               {isOwnProfile && (
-                <div className="glass-panel rounded-2xl p-4 space-y-3" data-testid="profile-wall-composer">
-                  <p className="text-sm font-medium neon-text">¿Qué estás pensando?</p>
-                  <textarea
-                    value={wallText}
-                    onChange={(e) => setWallText(e.target.value)}
-                    placeholder="Escribe algo en tu muro..."
-                    rows={3}
-                    className="w-full rounded-xl bg-white/5 border border-input px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                  <Button
-                    className="rounded-xl"
-                    disabled={!wallText.trim() || createPost.isPending}
-                    onClick={handlePublishWall}
-                    data-testid="button-profile-post"
-                  >
-                    {createPost.isPending ? "Publicando..." : "Publicar en mi muro"}
-                  </Button>
-                </div>
+                <CreatePostBox placeholder="Escribe algo en tu muro..." defaultVisibility="publico" />
               )}
               {postsLoading ? (
                 <div className="h-32 glass-panel rounded-2xl animate-pulse" />
@@ -628,16 +745,9 @@ export default function Profile() {
                   <p className="text-sm">{isOwnProfile ? "¡Comparte algo con tus seguidores!" : "Este usuario aún no ha publicado."}</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-4">
                   {(userPosts ?? []).map((post) => (
-                    <div key={post.id} className="glass-panel rounded-2xl p-4" data-testid={`post-${post.id}`}>
-                      <p className="text-sm mb-3 line-clamp-3">{post.content}</p>
-                      {post.mediaUrls?.[0] && <img src={post.mediaUrls[0]} className="rounded-xl w-full object-cover max-h-60 mb-3" alt="" loading="lazy" decoding="async" />}
-                      <div className="flex gap-4 text-muted-foreground text-sm">
-                        <span className="flex items-center gap-1.5"><Heart className="w-4 h-4" />{post.likesCount}</span>
-                        <span className="flex items-center gap-1.5"><MessageCircle className="w-4 h-4" />{post.commentsCount}</span>
-                      </div>
-                    </div>
+                    <PostCard key={post.id} post={post} />
                   ))}
                 </div>
               )}

@@ -62,6 +62,47 @@ const KEY = "socialhub_data_v1";
 const now = () => new Date().toISOString();
 const rid = () => Math.random().toString(36).slice(2, 12);
 
+const globalUserCache = new Map<string, AnyObj>();
+
+async function getCachedUsersMap(uids: (string | undefined | null)[], d: AppData): Promise<Map<string, AnyObj>> {
+  const result = new Map<string, AnyObj>();
+  const missingUids: string[] = [];
+
+  for (const rawUid of uids) {
+    if (!rawUid) continue;
+    const uid = String(rawUid);
+    if (globalUserCache.has(uid)) {
+      result.set(uid, globalUserCache.get(uid)!);
+    } else {
+      const local = d.users?.find((u) => u.id === uid);
+      if (local) {
+        globalUserCache.set(uid, local);
+        result.set(uid, local);
+      } else {
+        missingUids.push(uid);
+      }
+    }
+  }
+
+  if (missingUids.length > 0 && canUseFirestoreSocial()) {
+    const uniqueMissing = [...new Set(missingUids)];
+    await Promise.all(
+      uniqueMissing.map(async (uid) => {
+        try {
+          const snap = await getDoc(doc(db, "users", uid));
+          if (snap.exists()) {
+            const userData = { id: snap.id, ...(snap.data() as AnyObj) };
+            globalUserCache.set(uid, userData);
+            result.set(uid, userData);
+          }
+        } catch { /* ignore */ }
+      })
+    );
+  }
+
+  return result;
+}
+
 function baseUsers() {
   const today = new Date();
   const birthThisMonth = `${today.getFullYear() - 25}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
@@ -584,6 +625,48 @@ export function useGetMe() {
     },
   });
 }
+async function getFriendshipStatusFs(meId: string, targetId: string, d: AppData): Promise<{ friendStatus: string; incomingRequestId?: string }> {
+  if (!meId || !targetId || meId === targetId) return { friendStatus: "none" };
+
+  if (canUseFirestoreSocial()) {
+    try {
+      const outRef = doc(db, "friendRequests", `${meId}_${targetId}`);
+      const inRef = doc(db, "friendRequests", `${targetId}_${meId}`);
+      const [outSnap, inSnap, followOut, followIn] = await Promise.all([
+        getDoc(outRef),
+        getDoc(inRef),
+        getDoc(doc(db, "follows", `${meId}_${targetId}`)),
+        getDoc(doc(db, "follows", `${targetId}_${meId}`)),
+      ]);
+
+      if (outSnap.exists() && outSnap.data()?.status === "accepted") return { friendStatus: "friends" };
+      if (inSnap.exists() && inSnap.data()?.status === "accepted") return { friendStatus: "friends" };
+      if (followOut.exists() && followIn.exists()) return { friendStatus: "friends" };
+
+      if (outSnap.exists() && outSnap.data()?.status === "pending") return { friendStatus: "pending_sent" };
+      if (inSnap.exists() && inSnap.data()?.status === "pending") {
+        return { friendStatus: "pending_received", incomingRequestId: inSnap.id };
+      }
+    } catch {
+      /* fallback to local */
+    }
+  }
+
+  const reqOut = d.friendRequests?.find((r) => r.requesterId === meId && r.addresseeId === targetId);
+  const reqIn = d.friendRequests?.find((r) => r.requesterId === targetId && r.addresseeId === meId);
+
+  if (reqOut?.status === "accepted" || reqIn?.status === "accepted") return { friendStatus: "friends" };
+
+  const a = d.follows?.some((f) => f.followerId === meId && f.followingId === targetId);
+  const b = d.follows?.some((f) => f.followerId === targetId && f.followingId === meId);
+  if (a && b) return { friendStatus: "friends" };
+
+  if (reqOut?.status === "pending") return { friendStatus: "pending_sent" };
+  if (reqIn?.status === "pending") return { friendStatus: "pending_received", incomingRequestId: reqIn.id };
+
+  return { friendStatus: "none" };
+}
+
 export function useGetUser(userId: string, opts?: AnyObj) {
   return useQuery({
     queryKey: getGetUserQueryKey(userId),
@@ -602,9 +685,12 @@ export function useGetUser(userId: string, opts?: AnyObj) {
         }
         if (!userData) return null;
         const followSnap = await getDoc(doc(db, "follows", `${meId}_${userData.id}`));
+        const { friendStatus, incomingRequestId } = await getFriendshipStatusFs(meId, userData.id, d);
         return {
           ...userData,
           isFollowing: followSnap.exists(),
+          friendStatus,
+          incomingRequestId: incomingRequestId ?? null,
           skills: userData.skills || [],
           experience: userData.experience || [],
           education: userData.education || [],
@@ -620,7 +706,14 @@ export function useGetUser(userId: string, opts?: AnyObj) {
           x.username?.toLowerCase?.() === userId?.toLowerCase?.(),
       );
       if (!u) return null;
-      return { ...u, isFollowing: d.follows.some((f) => f.followerId === meId && f.followingId === u.id), skills: [], experience: [], education: [], languages: [], socialLinks: [] };
+      const { friendStatus, incomingRequestId } = await getFriendshipStatusFs(meId, u.id, d);
+      return {
+        ...u,
+        isFollowing: d.follows.some((f) => f.followerId === meId && f.followingId === u.id),
+        friendStatus,
+        incomingRequestId: incomingRequestId ?? null,
+        skills: [], experience: [], education: [], languages: [], socialLinks: []
+      };
     },
   });
 }
@@ -663,29 +756,25 @@ export function useGetFeed(_params?: AnyObj, opts?: AnyObj) {
   return useQuery({
     queryKey: opts?.query?.queryKey || getGetFeedQueryKey(feedMode),
     enabled: opts?.query?.enabled ?? true,
-    staleTime: 90_000,
-    refetchOnWindowFocus: false,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
     placeholderData: (prev) => prev,
     queryFn: async () => {
       const d = load();
       const meId = currentUserId();
-      const rankedAt = Date.now();
       if (canUseFirestoreSocial()) {
         const me = await ensureCurrentUserInFirestore(d);
-        const postSnap = await getDocs(postsCol);
-        const userSnap = await getDocs(usersCol);
-        const commentSnap = await getDocs(commentsCol);
-        const reactionSnap = await getDocs(query(reactionsCol, where("userId", "==", me.id)));
-        const savedSnap = await getDocs(query(savedPostsCol, where("userId", "==", me.id)));
-        const followSnap = await getDocs(query(followsCol, where("followerId", "==", me.id)));
+        const [postSnap, reactionSnap, savedSnap, followSnap] = await Promise.all([
+          getDocs(postsCol),
+          getDocs(query(reactionsCol, where("userId", "==", me.id))),
+          getDocs(query(savedPostsCol, where("userId", "==", me.id))),
+          getDocs(query(followsCol, where("followerId", "==", me.id))),
+        ]);
 
-        const usersMap = new Map<string, AnyObj>();
-        userSnap.forEach((u) => usersMap.set(u.id, { id: u.id, ...(u.data() as AnyObj) }));
-        const commentsByPost = new Map<string, number>();
-        commentSnap.forEach((c) => {
-          const p = c.data().postId;
-          commentsByPost.set(p, (commentsByPost.get(p) || 0) + 1);
-        });
+        const rawItems = postSnap.docs.map((p) => ({ id: p.id, ...(p.data() as AnyObj) }));
+        const authorIds = rawItems.map((item) => item.authorId);
+        const usersMap = await getCachedUsersMap(authorIds, d);
+
         const reactionsByPost = new Map<string, string>();
         reactionSnap.forEach((r) => reactionsByPost.set(r.data().postId, r.data().reaction || "like"));
         const savedIds = new Set<string>();
@@ -693,10 +782,9 @@ export function useGetFeed(_params?: AnyObj, opts?: AnyObj) {
         const followingIds = new Set<string>();
         followSnap.forEach((f) => followingIds.add(f.data().followingId));
 
-        const posts = postSnap.docs.map((p) => {
-          const item = { id: p.id, ...(p.data() as AnyObj) };
+        const posts = rawItems.map((item) => {
           const author = usersMap.get(item.authorId) || d.users.find((u) => u.id === item.authorId) || me;
-          const commentsCount = commentsByPost.get(item.id) || item.commentsCount || 0;
+          const commentsCount = item.commentsCount || 0;
           const userReaction = reactionsByPost.get(item.id) ?? null;
           return {
             ...item,
@@ -712,17 +800,28 @@ export function useGetFeed(_params?: AnyObj, opts?: AnyObj) {
         const onlyFollowing = !!_params?.following;
         let filtered = onlyFollowing ? posts.filter((p) => followingIds.has(p.authorId)) : posts;
         filtered = filterVisiblePosts(filtered, me.id, followingIds, friendIds);
-        const sorted = onlyFollowing
-          ? filtered.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
-          : filtered.sort((a, b) => rankPost(b, rankedAt) - rankPost(a, rankedAt));
+        
+        // Exclude demo seed reels from main feed so they don't clutter post feed
+        filtered = filtered.filter((p) => !(p.isMenpoeSeed && p.postType === "reel"));
+
+        const sorted = filtered.sort((a, b) => {
+          const timeA = new Date(a.createdAt || 0).getTime();
+          const timeB = new Date(b.createdAt || 0).getTime();
+          return timeB - timeA;
+        });
         return { posts: sorted, hasMore: false, nextCursor: null };
       }
       const onlyFollowing = !!_params?.following;
       const followingSet = new Set(d.follows.filter((f) => f.followerId === meId).map((f) => f.followingId));
       const friendIds = getFriendIds(d, meId);
-      const basePosts = [...d.posts].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+      const basePosts = [...d.posts].sort((a, b) => {
+        const timeA = new Date(a.createdAt || 0).getTime();
+        const timeB = new Date(b.createdAt || 0).getTime();
+        return timeB - timeA;
+      });
       let filtered = onlyFollowing ? basePosts.filter((p) => followingSet.has(p.authorId)) : basePosts;
       filtered = filterVisiblePosts(filtered, meId, followingSet, friendIds);
+      filtered = filtered.filter((p) => !(p.isMenpoeSeed && p.postType === "reel"));
       return { posts: filtered.map((p) => withAuthor(d, p, meId)), hasMore: false, nextCursor: null };
     },
   });
@@ -748,21 +847,25 @@ export function useCreatePost() {
           viewsCount: 0,
           createdAt: now(),
           updatedAt: now(),
+          ...(data.poll ? { poll: data.poll } : {}),
         };
         await setDoc(doc(db, "posts", created.id), created);
         await updateDoc(doc(db, "users", me.id), { postsCount: increment(1), updatedAt: now() });
         return created;
       }
       const me = ensureCurrentUser(d);
-      const p = { id: rid(), authorId: me.id, content: data.content, postType: data.postType || "text", mediaUrls: data.mediaUrls || [], hashtags: data.hashtags || [], visibility: data.visibility || "publico", location: data.location || null, likesCount: 0, sharesCount: 0, viewsCount: 0, createdAt: now() };
-      d.posts.unshift(p);
-      me.postsCount = (me.postsCount || 0) + 1;
-      save(d);
-      return p;
-    },
-    onSuccess: () => qc.invalidateQueries(),
-  });
-}
+      const p = { id: rid(), authorId: me.id, content: data.content, postType: data.postType || "text", mediaUrls: data.mediaUrls || [], hashtags: data.hashtags || [], visibility: data.visibility || "publico", location: data.location || null, likesCount: 0, sharesCount: 0, viewsCount: 0, createdAt: now(), ...(data.poll ? { poll: data.poll } : {}) };
+        save(d);
+        return p;
+      },
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: ["feed"] });
+        qc.invalidateQueries({ queryKey: ["user-posts"] });
+        qc.invalidateQueries({ queryKey: ["trending-posts"] });
+        qc.invalidateQueries();
+      },
+    });
+  }
 export function useLikePost() {
   const qc = useQueryClient();
   return useMutation({
@@ -831,7 +934,83 @@ export function useSavePost() {
     },
   });
 }
+
+export function useGetAllSaved(opts?: AnyObj) {
+  return useQuery({
+    queryKey: ["all-saved"],
+    enabled: opts?.query?.enabled ?? true,
+    queryFn: async () => {
+      const d = load();
+      const meId = currentUserId();
+      if (canUseFirestoreSocial()) {
+        const me = await ensureCurrentUserInFirestore(d);
+        const [savedPostsSnap, postSnap, usersSnap] = await Promise.all([
+          getDocs(query(savedPostsCol, where("userId", "==", me.id))),
+          getDocs(postsCol),
+          getDocs(usersCol),
+        ]);
+        const usersMap = new Map<string, AnyObj>();
+        usersSnap.forEach((u) => usersMap.set(u.id, { id: u.id, ...(u.data() as AnyObj) }));
+        const postsMap = new Map<string, AnyObj>();
+        postSnap.forEach((p) => postsMap.set(p.id, { id: p.id, ...(p.data() as AnyObj) }));
+        const savedPostIds = savedPostsSnap.docs.map((s) => s.data().postId as string);
+        const posts = savedPostIds
+          .map((id) => {
+            const p = postsMap.get(id);
+            if (!p) return null;
+            return { ...p, author: usersMap.get(p.authorId) || null };
+          })
+          .filter(Boolean);
+        // Collections - loaded from localStorage
+        const collectionsRaw = localStorage.getItem(`saved_collections_${me.id}`);
+        const collections = collectionsRaw ? JSON.parse(collectionsRaw) : [];
+        return { posts, jobs: [], collections };
+      }
+      const me = ensureCurrentUser(d);
+      const savedPostIds = d.savedPosts.filter((s: AnyObj) => s.userId === meId).map((s: AnyObj) => s.postId as string);
+      const posts = savedPostIds.map((id: string) => d.posts.find((p: AnyObj) => p.id === id)).filter(Boolean).map((p: AnyObj) => withAuthor(d, p, meId));
+      const savedJobIds = d.savedJobs.filter((s: AnyObj) => s.userId === meId).map((s: AnyObj) => s.jobId as string);
+      const jobs = savedJobIds.map((id: string) => d.jobs.find((j: AnyObj) => j.id === id)).filter(Boolean);
+      const collectionsRaw = localStorage.getItem(`saved_collections_${meId}`);
+      const collections = collectionsRaw ? JSON.parse(collectionsRaw) : [];
+      return { posts, jobs, collections };
+    },
+  });
+}
+
+export function useManageSavedCollection() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ action, collection, postId }: { action: "create" | "delete" | "add_post" | "remove_post"; collection?: { id: string; name: string; color?: string }; postId?: string }) => {
+      const meId = currentUserId();
+      const key = `saved_collections_${meId}`;
+      const raw = localStorage.getItem(key);
+      const collections: AnyObj[] = raw ? JSON.parse(raw) : [];
+
+      if (action === "create" && collection) {
+        collections.push({ id: `col_${Date.now()}`, name: collection.name, color: collection.color || "primary", postIds: [], createdAt: now() });
+      } else if (action === "delete" && collection) {
+        const idx = collections.findIndex((c: AnyObj) => c.id === collection.id);
+        if (idx !== -1) collections.splice(idx, 1);
+      } else if ((action === "add_post" || action === "remove_post") && collection && postId) {
+        const col = collections.find((c: AnyObj) => c.id === collection.id);
+        if (col) {
+          if (action === "add_post") {
+            if (!col.postIds.includes(postId)) col.postIds.push(postId);
+          } else {
+            col.postIds = col.postIds.filter((id: string) => id !== postId);
+          }
+        }
+      }
+      localStorage.setItem(key, JSON.stringify(collections));
+      return { collections };
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["all-saved"] }),
+  });
+}
+
 export function useSharePost() {
+
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ postId }: AnyObj) => {
@@ -1214,7 +1393,7 @@ export function useViewStory() {
   });
 }
 export function useGetMyStats() { return useQuery({ queryKey: ["my-stats"], queryFn: async () => { const d = load(); if (canUseFirestoreSocial()) { const me = await ensureCurrentUserInFirestore(d); const [followers, following, posts] = await Promise.all([getDocs(query(followsCol, where("followingId", "==", me.id))), getDocs(query(followsCol, where("followerId", "==", me.id))), getDocs(query(postsCol, where("authorId", "==", me.id)))]); return { followersCount: followers.size, followingCount: following.size, postsCount: posts.size, likesReceived: 0, viewsReceived: 0 }; } const me = ensureCurrentUser(d); return { followersCount: d.follows.filter((f) => f.followingId === me.id).length, followingCount: d.follows.filter((f) => f.followerId === me.id).length, postsCount: d.posts.filter((p) => p.authorId === me.id).length, likesReceived: 0, viewsReceived: 0 }; } }); }
-export function useGetSuggestedUsers() { return useQuery({ queryKey: ["suggested-users"], queryFn: async () => { const d = load(); const meId = currentUserId(); if (canUseFirestoreSocial()) { await ensureCurrentUserInFirestore(d); const [usersSnap, followSnap] = await Promise.all([getDocs(usersCol), getDocs(query(followsCol, where("followerId", "==", meId)))]); const following = new Set<string>(); followSnap.forEach((f) => following.add((f.data() as AnyObj).followingId)); return usersSnap.docs.map((u) => ({ ...(u.data() as AnyObj), isFollowing: following.has(u.id) })).filter((u) => u.id !== meId); } return d.users.filter((u) => u.id !== meId).map((u) => ({ ...u, isFollowing: d.follows.some((f) => f.followerId === meId && f.followingId === u.id) })); } }); }
+export function useGetSuggestedUsers() { return useQuery({ queryKey: ["suggested-users"], staleTime: 120_000, queryFn: async () => { const d = load(); const meId = currentUserId(); if (canUseFirestoreSocial()) { await ensureCurrentUserInFirestore(d); const [usersSnap, followSnap] = await Promise.all([getDocs(query(usersCol, limit(25))), getDocs(query(followsCol, where("followerId", "==", meId)))]); const following = new Set<string>(); followSnap.forEach((f) => following.add((f.data() as AnyObj).followingId)); return usersSnap.docs.map((u) => ({ ...(u.data() as AnyObj), isFollowing: following.has(u.id) })).filter((u) => u.id !== meId); } return d.users.filter((u) => u.id !== meId).map((u) => ({ ...u, isFollowing: d.follows.some((f) => f.followerId === meId && f.followingId === u.id) })); } }); }
 export function useFollowUser() { const qc = useQueryClient(); return useMutation({ mutationFn: async ({ userId }: AnyObj) => { const d = load(); const meId = currentUserId(); if (canUseFirestoreSocial()) { const me = await ensureCurrentUserInFirestore(d); await setDoc(doc(db, "follows", `${me.id}_${userId}`), { followerId: me.id, followingId: userId, createdAt: now() }); await createNotification({ type: "follow", recipientId: userId, actorId: me.id, text: `${me.displayName} empezó a seguirte` }); return { following: true }; } const exists = d.follows.some((f) => f.followerId === meId && f.followingId === userId); if (!exists) d.follows.push({ followerId: meId, followingId: userId }); save(d); return { following: true }; }, onSuccess: () => qc.invalidateQueries() }); }
 export function useUnfollowUser() { const qc = useQueryClient(); return useMutation({ mutationFn: async ({ userId }: AnyObj) => { const d = load(); const meId = currentUserId(); if (canUseFirestoreSocial()) { await deleteDoc(doc(db, "follows", `${meId}_${userId}`)); return { following: false }; } d.follows = d.follows.filter((f) => !(f.followerId === meId && f.followingId === userId)); save(d); return { following: false }; }, onSuccess: () => qc.invalidateQueries() }); }
 export function useGeneratePost() { return useMutation({ mutationFn: async ({ data }: AnyObj) => ({ content: `Idea para "${data.topic}": Comparte tu experiencia, agrega valor practico y termina con una pregunta para tu audiencia.` }) }); }
@@ -1454,29 +1633,27 @@ export function useSendFriendRequest() {
   return useMutation({
     mutationFn: async ({ userId }: AnyObj) => {
       const d = load();
-      const me = ensureCurrentUser(d);
+      const me = canUseFirestoreSocial()
+        ? await ensureCurrentUserInFirestore(d)
+        : ensureCurrentUser(d);
       const meId = me.id;
 
       const addresseeId = userId;
-      const alreadyPending = d.friendRequests.some(
-        (r) => r.requesterId === meId && r.addresseeId === addresseeId && r.status === "pending",
-      );
-      if (alreadyPending) return { status: "pending" };
-
-      d.friendRequests.push({
-        id: rid(),
-        requesterId: meId,
-        addresseeId,
-        status: "pending",
-        createdAt: now(),
-      });
-      save(d);
+      if (meId === addresseeId) return { status: "error" };
 
       const body = `${me.displayName} te envió una solicitud de amistad`;
       const title = "Solicitud de amistad";
       const actor = { id: me.id, displayName: me.displayName, avatarUrl: me.avatarUrl };
 
       if (canUseFirestoreSocial()) {
+        const reqId = `${meId}_${addresseeId}`;
+        await setDoc(doc(db, "friendRequests", reqId), {
+          id: reqId,
+          requesterId: meId,
+          addresseeId,
+          status: "pending",
+          createdAt: now(),
+        });
         await createNotification({
           type: "system",
           recipientId: addresseeId,
@@ -1486,25 +1663,101 @@ export function useSendFriendRequest() {
           body,
           text: body,
         });
+      }
+
+      const existingIdx = d.friendRequests.findIndex(
+        (r) => r.requesterId === meId && r.addresseeId === addresseeId,
+      );
+      if (existingIdx >= 0) {
+        d.friendRequests[existingIdx].status = "pending";
       } else {
-        d.notifications.push({
-          id: rid(),
-          type: "system",
-          recipientId: addresseeId,
-          actorId: meId,
-          actor,
-          title,
-          body,
-          text: body,
-          isRead: false,
+        d.friendRequests.push({
+          id: `${meId}_${addresseeId}`,
+          requesterId: meId,
+          addresseeId,
+          status: "pending",
           createdAt: now(),
         });
-        save(d);
       }
+      save(d);
 
       return { status: "pending" };
     },
-    onSuccess: () => qc.invalidateQueries(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-friends"] });
+      qc.invalidateQueries({ queryKey: ["search-global"] });
+      qc.invalidateQueries({ queryKey: ["suggested-users"] });
+      qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith("user") });
+    },
+  });
+}
+
+export function useCancelFriendRequest() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ userId }: AnyObj) => {
+      const d = load();
+      const meId = currentUserId();
+      const reqId = `${meId}_${userId}`;
+
+      if (canUseFirestoreSocial()) {
+        await deleteDoc(doc(db, "friendRequests", reqId));
+      }
+
+      d.friendRequests = d.friendRequests.filter(
+        (r) => !(r.requesterId === meId && r.addresseeId === userId),
+      );
+      save(d);
+      return { ok: true };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-friends"] });
+      qc.invalidateQueries({ queryKey: ["search-global"] });
+      qc.invalidateQueries({ queryKey: ["suggested-users"] });
+      qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith("user") });
+    },
+  });
+}
+
+export function useRemoveFriend() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ userId }: AnyObj) => {
+      const d = load();
+      const meId = currentUserId();
+
+      if (canUseFirestoreSocial()) {
+        await Promise.all([
+          deleteDoc(doc(db, "friendRequests", `${meId}_${userId}`)),
+          deleteDoc(doc(db, "friendRequests", `${userId}_${meId}`)),
+          deleteDoc(doc(db, "follows", `${meId}_${userId}`)),
+          deleteDoc(doc(db, "follows", `${userId}_${meId}`)),
+        ]);
+      }
+
+      d.friendRequests = d.friendRequests.filter(
+        (r) =>
+          !(
+            (r.requesterId === meId && r.addresseeId === userId) ||
+            (r.requesterId === userId && r.addresseeId === meId)
+          ),
+      );
+      d.follows = d.follows.filter(
+        (f) =>
+          !(
+            (f.followerId === meId && f.followingId === userId) ||
+            (f.followerId === userId && f.followingId === meId)
+          ),
+      );
+      save(d);
+      return { ok: true };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["my-friends"] });
+      qc.invalidateQueries({ queryKey: ["search-global"] });
+      qc.invalidateQueries({ queryKey: ["suggested-users"] });
+      qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith("user") });
+    },
   });
 }
 
@@ -2552,6 +2805,7 @@ export function useSetTyping() {
 export function useGetNotifications() {
   return useQuery({
     queryKey: ["notifications"],
+    refetchInterval: 12000,
     queryFn: async () => {
       const d = load();
       const normalizeTitle = (type: string, raw?: AnyObj) => {
@@ -2590,16 +2844,8 @@ export function useGetNotifications() {
         if (actorId) actorIds.add(String(actorId));
       }
 
-      // Build actor map to populate UI (notif.actor).
-      const userMap = new Map<string, AnyObj>();
-      if (actorIds.size > 0) {
-        if (canUseFirestoreSocial()) {
-          const usersSnap = await getDocs(usersCol);
-          usersSnap.docs.forEach((u) => userMap.set(u.id, { id: u.id, ...(u.data() as AnyObj) }));
-        } else {
-          d.users.forEach((u) => userMap.set(u.id, u));
-        }
-      }
+      // Build actor map using cached user lookup.
+      const userMap = await getCachedUsersMap([...actorIds], d);
 
       const normalized = rawNotifs
         .map((n) => {
@@ -2659,19 +2905,47 @@ export function useGetMyFriends(opts?: AnyObj) {
         : ensureCurrentUser(d);
       const meId = me.id;
 
-      const incoming = d.friendRequests
+      let incoming = d.friendRequests
         .filter((r) => r.addresseeId === meId && r.status === "pending")
         .map((r) => ({
           ...r,
           sender: d.users.find((u) => u.id === r.requesterId),
         }));
-      const outgoing = d.friendRequests.filter((r) => r.requesterId === meId && r.status === "pending");
+      let outgoing = d.friendRequests.filter((r) => r.requesterId === meId && r.status === "pending");
 
       if (canUseFirestoreSocial()) {
-        const [followOut, followIn] = await Promise.all([
+        const [followOut, followIn, reqSnap, outSnap] = await Promise.all([
           getDocs(query(followsCol, where("followerId", "==", meId))),
           getDocs(query(followsCol, where("followingId", "==", meId))),
+          getDocs(query(collection(db, "friendRequests"), where("addresseeId", "==", meId), where("status", "==", "pending"))),
+          getDocs(query(collection(db, "friendRequests"), where("requesterId", "==", meId), where("status", "==", "pending"))),
         ]);
+        
+        const requesterUsers = await Promise.all(
+          reqSnap.docs.map(async (docSnap) => {
+            const reqData = docSnap.data() as AnyObj;
+            const senderId = reqData.requesterId;
+            const local = d.users.find((u) => u.id === senderId);
+            if (local) return { req: reqData, sender: local };
+            try {
+              const uSnap = await getDoc(doc(db, "users", senderId));
+              return { req: reqData, sender: uSnap.exists() ? { id: uSnap.id, ...uSnap.data() } : null };
+            } catch {
+              return { req: reqData, sender: null };
+            }
+          })
+        );
+        incoming = requesterUsers.map(({ req, sender }) => ({
+          id: req.id,
+          requesterId: req.requesterId,
+          addresseeId: req.addresseeId,
+          status: req.status,
+          createdAt: req.createdAt,
+          sender: sender || { id: req.requesterId, displayName: "Usuario" }
+        }));
+        
+        outgoing = outSnap.docs.map((docSnap) => docSnap.data());
+
         const following = new Set(followOut.docs.map((x) => (x.data() as AnyObj).followingId));
         const followers = new Set(followIn.docs.map((x) => (x.data() as AnyObj).followerId));
         const mutualIds = [...following].filter((id) => followers.has(id));
@@ -2728,19 +3002,40 @@ export function useAcceptFriendRequest() {
       const d = load();
       const me = currentUserId();
       const req = d.friendRequests.find((r) => r.id === requestId && r.addresseeId === me);
-      if (!req) throw new Error("Solicitud no encontrada");
+      if (!req && !canUseFirestoreSocial()) throw new Error("Solicitud no encontrada");
 
-      // Capture for notifications before mutating
-      const requesterId = req.requesterId;
+      let requesterId = req ? req.requesterId : "";
 
-      req.status = "accepted";
-      if (!d.follows.some((f) => f.followerId === me && f.followingId === requesterId)) {
-        d.follows.push({ followerId: me, followingId: requesterId });
+      if (canUseFirestoreSocial()) {
+        const reqRef = doc(db, "friendRequests", requestId);
+        let reqSnap = await getDoc(reqRef);
+        let reqData = reqSnap.exists() ? reqSnap.data() : null;
+        if (!reqData) {
+          const qSnap = await getDocs(query(collection(db, "friendRequests"), where("id", "==", requestId)));
+          if (!qSnap.empty) {
+            reqData = qSnap.docs[0].data();
+          }
+        }
+        const reqIdToUse = reqData ? reqData.id : requestId;
+        requesterId = reqData ? reqData.requesterId : requestId.split("_")[0];
+        
+        await setDoc(doc(db, "friendRequests", reqIdToUse), { status: "accepted" }, { merge: true });
+        await Promise.all([
+          setDoc(doc(db, "follows", `${me}_${requesterId}`), { followerId: me, followingId: requesterId, createdAt: now() }),
+          setDoc(doc(db, "follows", `${requesterId}_${me}`), { followerId: requesterId, followingId: me, createdAt: now() }),
+        ]);
+      } else {
+        if (req) {
+          req.status = "accepted";
+          if (!d.follows.some((f) => f.followerId === me && f.followingId === requesterId)) {
+            d.follows.push({ followerId: me, followingId: requesterId });
+          }
+          if (!d.follows.some((f) => f.followerId === requesterId && f.followingId === me)) {
+            d.follows.push({ followerId: requesterId, followingId: me });
+          }
+          save(d);
+        }
       }
-      if (!d.follows.some((f) => f.followerId === requesterId && f.followingId === me)) {
-        d.follows.push({ followerId: requesterId, followingId: me });
-      }
-      save(d);
 
       const actor = d.users.find((u) => u.id === me) ?? ensureCurrentUser(d);
       const actorMini = { id: actor.id, displayName: actor.displayName, avatarUrl: actor.avatarUrl };
@@ -2786,9 +3081,27 @@ export function useRejectFriendRequest() {
       const d = load();
       const me = currentUserId();
       const req = d.friendRequests.find((r) => r.id === requestId && r.addresseeId === me);
-      const requesterId = req?.requesterId;
-      d.friendRequests = d.friendRequests.filter((r) => !(r.id === requestId && r.addresseeId === me));
-      save(d);
+      let requesterId = req?.requesterId;
+
+      if (canUseFirestoreSocial()) {
+        const reqRef = doc(db, "friendRequests", requestId);
+        let reqSnap = await getDoc(reqRef);
+        let reqData = reqSnap.exists() ? reqSnap.data() : null;
+        if (!reqData) {
+          const qSnap = await getDocs(query(collection(db, "friendRequests"), where("id", "==", requestId)));
+          if (!qSnap.empty) {
+            reqData = qSnap.docs[0].data();
+          }
+        }
+        const reqIdToUse = reqData ? reqData.id : requestId;
+        requesterId = reqData ? reqData.requesterId : (requestId.includes("_") ? requestId.split("_")[0] : undefined);
+        if (reqIdToUse) {
+          await deleteDoc(doc(db, "friendRequests", reqIdToUse));
+        }
+      } else {
+        d.friendRequests = d.friendRequests.filter((r) => !(r.id === requestId && r.addresseeId === me));
+        save(d);
+      }
 
       if (requesterId) {
         const actor = d.users.find((u) => u.id === me) ?? ensureCurrentUser(d);
@@ -2919,22 +3232,14 @@ export function useGetUserPosts(userId: string, opts?: AnyObj) {
         const followSnap = await getDocs(query(followsCol, where("followerId", "==", me.id)));
         followSnap.forEach((f) => followingSet.add((f.data() as AnyObj).followingId));
 
-        const [postSnap, userSnap, commentSnap, reactionSnap, savedSnap] =
+        const [postSnap, reactionSnap, savedSnap] =
           await Promise.all([
             getDocs(query(postsCol, where("authorId", "==", authorId))),
-            getDocs(usersCol),
-            getDocs(commentsCol),
             getDocs(query(reactionsCol, where("userId", "==", me.id))),
             getDocs(query(savedPostsCol, where("userId", "==", me.id))),
           ]);
 
-        const usersMap = new Map<string, AnyObj>();
-        userSnap.forEach((u) => usersMap.set(u.id, { id: u.id, ...(u.data() as AnyObj) }));
-        const commentsByPost = new Map<string, number>();
-        commentSnap.forEach((c) => {
-          const pid = (c.data() as AnyObj).postId;
-          commentsByPost.set(pid, (commentsByPost.get(pid) || 0) + 1);
-        });
+        const usersMap = await getCachedUsersMap([authorId, me.id], d);
         const reactionsByPost = new Map<string, string>();
         reactionSnap.forEach((r) =>
           reactionsByPost.set((r.data() as AnyObj).postId, (r.data() as AnyObj).reaction || "like"),
@@ -2947,7 +3252,7 @@ export function useGetUserPosts(userId: string, opts?: AnyObj) {
           .filter((p) => !p.communityId)
           .map((item) => {
             const author = usersMap.get(item.authorId) || me;
-            const commentsCount = commentsByPost.get(item.id) || item.commentsCount || 0;
+            const commentsCount = item.commentsCount || 0;
             const userReaction = reactionsByPost.get(item.id) ?? null;
             return {
               ...item,
@@ -3044,6 +3349,7 @@ export function useMarkConversationRead() {
 export function useGetUnreadNotificationsCount() {
   return useQuery({
     queryKey: ["notifications-unread-count"],
+    refetchInterval: 12000,
     queryFn: async () => {
       const d = load();
       if (canUseFirestoreSocial()) {

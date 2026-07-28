@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Search, TrendingUp, Heart, MessageCircle, UserPlus, CheckCircle, Clock, Building2 } from "lucide-react";
 import { getPageTypeLabel } from "@/lib/page-types";
 import { formatDistanceToNow } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
 
 const TREND_COLORS = [
   "from-violet-600/20 to-indigo-600/20 border-violet-500/20",
@@ -53,6 +54,29 @@ export default function Explore() {
   const { data: searchHistory } = useGetSearchHistory();
   const clearHistory = useClearSearchHistory();
   const qc = useQueryClient();
+  const { toast } = useToast();
+
+  const handleSendFriendRequest = (targetUser: any) => {
+    sendFriendRequest.mutate(
+      { userId: targetUser.id },
+      {
+        onSuccess: () => {
+          qc.invalidateQueries();
+          toast({
+            title: "Solicitud de amistad enviada",
+            description: `Se ha enviado la solicitud a ${targetUser.displayName || targetUser.username}.`,
+          });
+        },
+        onError: () => {
+          toast({
+            title: "Error",
+            description: "No se pudo enviar la solicitud de amistad.",
+            variant: "destructive",
+          });
+        },
+      }
+    );
+  };
 
   const hasSearchResults =
     searchResults &&
@@ -137,8 +161,16 @@ export default function Explore() {
                     <Button size="sm" variant={user.isFollowing ? "outline" : "default"} onClick={() => followUser.mutate({ userId: user.id }, { onSuccess: () => qc.invalidateQueries() })} data-testid={`button-follow-${user.id}`}>
                       {user.isFollowing ? "Siguiendo" : "Seguir"}
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => sendFriendRequest.mutate({ userId: user.id })} className="px-2" title="Enviar solicitud">
-                      <UserPlus className="w-4 h-4" />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={sendFriendRequest.isPending}
+                      onClick={() => handleSendFriendRequest(user)}
+                      className="px-2"
+                      title="Enviar solicitud de amistad"
+                      data-testid={`button-friend-${user.id}`}
+                    >
+                      <UserPlus className="w-4 h-4 text-primary" />
                     </Button>
                   </div>
                 ))}
@@ -267,9 +299,22 @@ export default function Explore() {
                   <div className="text-sm text-muted-foreground">@{user.username}</div>
                   <div className="text-xs text-muted-foreground mt-1">{user.followersCount} followers</div>
                 </div>
-                <Button size="sm" className="w-full" variant={user.isFollowing ? "outline" : "default"} onClick={() => followUser.mutate({ userId: user.id }, { onSuccess: () => qc.invalidateQueries() })} data-testid={`button-follow-${user.id}`}>
-                  <UserPlus className="w-4 h-4 mr-1" />{user.isFollowing ? "Siguiendo" : "Seguir"}
-                </Button>
+                <div className="flex gap-2 w-full">
+                  <Button size="sm" className="flex-1" variant={user.isFollowing ? "outline" : "default"} onClick={() => followUser.mutate({ userId: user.id }, { onSuccess: () => qc.invalidateQueries() })} data-testid={`button-follow-${user.id}`}>
+                    <UserPlus className="w-4 h-4 mr-1" />{user.isFollowing ? "Siguiendo" : "Seguir"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={sendFriendRequest.isPending}
+                    onClick={() => handleSendFriendRequest(user)}
+                    className="px-3"
+                    title="Enviar solicitud de amistad"
+                    data-testid={`button-friend-${user.id}`}
+                  >
+                    <UserPlus className="w-4 h-4 text-primary" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>

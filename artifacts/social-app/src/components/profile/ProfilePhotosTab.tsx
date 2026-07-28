@@ -56,7 +56,7 @@ export function ProfilePhotosTab() {
       toast({ title: "Fotos subidas", description: `${files.length} foto(s) agregadas al álbum.` });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Error de subida";
-      toast({ title: "No se pudo subir", description: `${msg}. ${LOCAL_STORAGE_BUDGET_HINT}`, variant: "destructive" });
+      toast({ title: "No se pudo subir", description: msg, variant: "destructive" });
     } finally {
       setUploading(false);
     }
