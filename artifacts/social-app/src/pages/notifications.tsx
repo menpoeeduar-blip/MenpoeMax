@@ -86,13 +86,13 @@ export default function Notifications() {
   return (
     <Shell>
       <div className="max-w-2xl mx-auto w-full p-4 pb-24">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
           <div>
             <h1 className="text-2xl font-bold">Notificaciones</h1>
             {unreadCount > 0 && <p className="text-sm text-muted-foreground">{unreadCount} sin leer</p>}
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setShowPrefs((v) => !v)}>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="ghost" size="sm" onClick={() => setShowPrefs((v) => !v)} className="text-xs">
               Preferencias
             </Button>
             {unreadCount > 0 && (
@@ -102,8 +102,9 @@ export default function Notifications() {
                 onClick={() => markAllRead.mutate(undefined, { onSuccess: () => qc.invalidateQueries() })}
                 disabled={markAllRead.isPending}
                 data-testid="button-mark-all-read"
+                className="text-xs whitespace-nowrap"
               >
-                <CheckCheck className="w-4 h-4 mr-2" />Marcar todas
+                <CheckCheck className="w-4 h-4 mr-1" />Marcar leídas
               </Button>
             )}
           </div>
