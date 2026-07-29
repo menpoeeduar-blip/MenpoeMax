@@ -4,7 +4,7 @@ import { auth, db } from "./firebase";
 const now = () => new Date().toISOString();
 
 /** Incrementar al cambiar URLs de video para re-sincronizar Firestore. */
-export const REEL_MEDIA_VERSION = 3;
+export const REEL_MEDIA_VERSION = 4;
 
 /** URLs públicas que responden 200 (evitar gtv-videos-bucket — falla en muchos navegadores). */
 const MDN = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos";
@@ -19,9 +19,9 @@ export const MENPOE_REEL_AUTHORS = [
     avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=menpoe_sofia",
     role: "creator",
     isVerified: true,
-    followersCount: 1200,
-    followingCount: 80,
-    postsCount: 12,
+    followersCount: 0,
+    followingCount: 0,
+    postsCount: 2,
     createdAt: now(),
   },
   {
@@ -32,9 +32,9 @@ export const MENPOE_REEL_AUTHORS = [
     avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=menpoe_carlos",
     role: "creator",
     isVerified: true,
-    followersCount: 980,
-    followingCount: 65,
-    postsCount: 10,
+    followersCount: 0,
+    followingCount: 0,
+    postsCount: 2,
     createdAt: now(),
   },
   {
@@ -45,9 +45,9 @@ export const MENPOE_REEL_AUTHORS = [
     avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=menpoe_ana",
     role: "creator",
     isVerified: false,
-    followersCount: 640,
-    followingCount: 120,
-    postsCount: 8,
+    followersCount: 0,
+    followingCount: 0,
+    postsCount: 2,
     createdAt: now(),
   },
 ] as const;
@@ -62,10 +62,10 @@ export const MENPOE_DEMO_REELS = [
     hashtags: ["menpoe", "reels", "empleo"],
     visibility: "publico",
     isMenpoeSeed: true,
-    likesCount: 48,
-    commentsCount: 6,
-    sharesCount: 12,
-    viewsCount: 2400,
+    likesCount: 0,
+    commentsCount: 0,
+    sharesCount: 0,
+    viewsCount: 0,
   },
   {
     id: "menpoe_reel_2",
@@ -76,10 +76,10 @@ export const MENPOE_DEMO_REELS = [
     hashtags: ["menpoe", "carrera", "tips"],
     visibility: "publico",
     isMenpoeSeed: true,
-    likesCount: 35,
-    commentsCount: 4,
-    sharesCount: 8,
-    viewsCount: 1800,
+    likesCount: 0,
+    commentsCount: 0,
+    sharesCount: 0,
+    viewsCount: 0,
   },
   {
     id: "menpoe_reel_3",
@@ -90,10 +90,10 @@ export const MENPOE_DEMO_REELS = [
     hashtags: ["menpoe", "creatividad", "redsocial"],
     visibility: "publico",
     isMenpoeSeed: true,
-    likesCount: 62,
-    commentsCount: 9,
-    sharesCount: 15,
-    viewsCount: 3100,
+    likesCount: 0,
+    commentsCount: 0,
+    sharesCount: 0,
+    viewsCount: 0,
   },
   {
     id: "menpoe_reel_4",
@@ -104,10 +104,10 @@ export const MENPOE_DEMO_REELS = [
     hashtags: ["vacantes", "menpoe", "trabajo"],
     visibility: "publico",
     isMenpoeSeed: true,
-    likesCount: 41,
-    commentsCount: 3,
-    sharesCount: 6,
-    viewsCount: 1500,
+    likesCount: 0,
+    commentsCount: 0,
+    sharesCount: 0,
+    viewsCount: 0,
   },
   {
     id: "menpoe_reel_5",
@@ -118,10 +118,10 @@ export const MENPOE_DEMO_REELS = [
     hashtags: ["tech", "menpoe", "comunidad"],
     visibility: "publico",
     isMenpoeSeed: true,
-    likesCount: 29,
-    commentsCount: 2,
-    sharesCount: 5,
-    viewsCount: 980,
+    likesCount: 0,
+    commentsCount: 0,
+    sharesCount: 0,
+    viewsCount: 0,
   },
   {
     id: "menpoe_reel_6",
@@ -132,10 +132,10 @@ export const MENPOE_DEMO_REELS = [
     hashtags: ["reels", "menpoe", "inspiracion"],
     visibility: "publico",
     isMenpoeSeed: true,
-    likesCount: 55,
-    commentsCount: 7,
-    sharesCount: 11,
-    viewsCount: 2200,
+    likesCount: 0,
+    commentsCount: 0,
+    sharesCount: 0,
+    viewsCount: 0,
   },
 ];
 

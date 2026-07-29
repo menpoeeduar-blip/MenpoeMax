@@ -52,32 +52,51 @@ export default function Notifications() {
   };
 
   const filtered = (notifications ?? []).filter((n) => prefs[n.type] ?? true);
-  const unreadCount = filtered.filter((n) => !n.isRead).length ?? 0;
+  const [processedNotifIds, setProcessedNotifIds] = useState<Set<string>>(new Set());
 
-  const handleAccept = (actorId: string, actorName?: string, requestId?: string) => {
+  const handleAccept = (actorId: string, notifId: string, actorName?: string, requestId?: string) => {
     const reqIdToUse = requestId || `${actorId}`;
+    setProcessedNotifIds((prev) => new Set(prev).add(notifId));
     acceptFriend.mutate(
       { requestId: reqIdToUse },
       {
         onSuccess: () => {
+          qc.invalidateQueries({ queryKey: ["notifications"] });
+          qc.invalidateQueries({ queryKey: ["notifications-unread-count"] });
+          qc.invalidateQueries({ queryKey: ["my-friends"] });
           qc.invalidateQueries();
-          toast({ title: "Solicitud aceptada", description: `¡Ahora son amigos con ${actorName || "el usuario"}!` });
+          toast({ title: "Solicitud aceptada", description: `¡Ahora tú y ${actorName || "el usuario"} son amigos!` });
         },
         onError: () => {
+          setProcessedNotifIds((prev) => {
+            const next = new Set(prev);
+            next.delete(notifId);
+            return next;
+          });
           toast({ title: "Error", description: "No se pudo procesar la solicitud.", variant: "destructive" });
         },
       }
     );
   };
 
-  const handleReject = (actorId: string, requestId?: string) => {
+  const handleReject = (actorId: string, notifId: string, requestId?: string) => {
     const reqIdToUse = requestId || `${actorId}`;
+    setProcessedNotifIds((prev) => new Set(prev).add(notifId));
     rejectFriend.mutate(
       { requestId: reqIdToUse },
       {
         onSuccess: () => {
+          qc.invalidateQueries({ queryKey: ["notifications"] });
+          qc.invalidateQueries({ queryKey: ["notifications-unread-count"] });
           qc.invalidateQueries();
           toast({ title: "Solicitud rechazada" });
+        },
+        onError: () => {
+          setProcessedNotifIds((prev) => {
+            const next = new Set(prev);
+            next.delete(notifId);
+            return next;
+          });
         },
       }
     );
@@ -143,10 +162,15 @@ export default function Notifications() {
               : filtered.map((notif) => {
                 const typeInfo = TYPE_ICONS[notif.type] ?? TYPE_ICONS.system;
                 const Icon = typeInfo.icon;
-                const isFriendRequest =
-                  notif.title?.toLowerCase().includes("solicitud") ||
-                  notif.body?.toLowerCase().includes("solicitud") ||
-                  notif.type === "follow";
+                const isProcessed = processedNotifIds.has(notif.id) || notif.isRead;
+                const isPendingFriendRequest =
+                  !isProcessed &&
+                  (notif.title?.toLowerCase().includes("solicitud de amistad") ||
+                    (notif.body?.toLowerCase().includes("solicitud") && !notif.body?.toLowerCase().includes("aceptó"))) &&
+                  !notif.title?.toLowerCase().includes("aceptó") &&
+                  !notif.title?.toLowerCase().includes("confirmada") &&
+                  !notif.title?.toLowerCase().includes("rechazó");
+
                 const actorId = notif.actor?.id || notif.actorId;
 
                 return (
@@ -171,12 +195,12 @@ export default function Notifications() {
                     </div>
 
                     <div className="flex items-center gap-2 mt-2 sm:mt-0 w-full sm:w-auto justify-end">
-                      {isFriendRequest && actorId && (
+                      {isPendingFriendRequest && actorId && (
                         <>
                           <Button
                             size="sm"
                             className="bg-emerald-600 hover:bg-emerald-700 text-white h-8 text-xs gap-1 rounded-xl"
-                            onClick={() => handleAccept(actorId, notif.actor?.displayName, notif.requestId)}
+                            onClick={() => handleAccept(actorId, notif.id, notif.actor?.displayName, notif.requestId)}
                             disabled={acceptFriend.isPending}
                           >
                             <UserCheck className="w-3.5 h-3.5" />
@@ -186,7 +210,7 @@ export default function Notifications() {
                             size="sm"
                             variant="outline"
                             className="h-8 text-xs gap-1 rounded-xl text-red-400 hover:text-red-300 border-red-500/30"
-                            onClick={() => handleReject(actorId, notif.requestId)}
+                            onClick={() => handleReject(actorId, notif.id, notif.requestId)}
                             disabled={rejectFriend.isPending}
                           >
                             <UserX className="w-3.5 h-3.5" />
