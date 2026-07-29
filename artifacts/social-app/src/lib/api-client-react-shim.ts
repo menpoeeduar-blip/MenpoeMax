@@ -908,6 +908,7 @@ export function useLikePost() {
       qc.invalidateQueries({ queryKey: ["trending-posts"] });
       qc.invalidateQueries({ queryKey: ["all-saved"] });
       qc.invalidateQueries({ queryKey: ["notifications"] });
+      qc.invalidateQueries({ queryKey: ["notifications-unread-count"] });
       qc.invalidateQueries();
     },
   });
@@ -3418,7 +3419,8 @@ export function useMarkConversationRead() {
 export function useGetUnreadNotificationsCount() {
   return useQuery({
     queryKey: ["notifications-unread-count"],
-    refetchInterval: 12000,
+    refetchInterval: 3000,
+    staleTime: 0,
     queryFn: async () => {
       const d = load();
       if (canUseFirestoreSocial()) {

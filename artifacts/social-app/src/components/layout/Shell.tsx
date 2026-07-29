@@ -332,11 +332,31 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[2px] overflow-hidden">
           <div className="h-full w-1/3 animate-[neon-line-sweep_3.4s_linear_infinite] bg-gradient-to-r from-transparent via-fuchsia-400 to-cyan-400" />
         </div>
-        {TOP_NAV_ITEMS.slice(0, 5).map((item) => (
-          <Link key={item.href} href={item.href} className={cn("p-2 rounded-xl", location === item.href ? "text-primary shadow-[0_0_12px_hsl(var(--primary)/0.5)]" : "text-muted-foreground")}>
-            <item.icon className="w-6 h-6" />
-          </Link>
-        ))}
+        {/* Home */}
+        <Link href="/" className={cn("p-2 rounded-xl", location === "/" ? "text-primary shadow-[0_0_12px_hsl(var(--primary)/0.5)]" : "text-muted-foreground")}>
+          <Home className="w-6 h-6" />
+        </Link>
+        {/* Explorar */}
+        <Link href="/explore" className={cn("p-2 rounded-xl", location === "/explore" ? "text-primary shadow-[0_0_12px_hsl(var(--primary)/0.5)]" : "text-muted-foreground")}>
+          <Compass className="w-6 h-6" />
+        </Link>
+        {/* Mensajes */}
+        <Link href="/messages" className={cn("p-2 rounded-xl", location === "/messages" ? "text-primary shadow-[0_0_12px_hsl(var(--primary)/0.5)]" : "text-muted-foreground")}>
+          <MessageSquare className="w-6 h-6" />
+        </Link>
+        {/* Notificaciones con badge en tiempo real */}
+        <Link href="/notifications" className={cn("relative p-2 rounded-xl", location === "/notifications" ? "text-primary shadow-[0_0_12px_hsl(var(--primary)/0.5)]" : "text-muted-foreground")}>
+          <Bell className="w-6 h-6" />
+          {(unreadCount ?? 0) > 0 && (
+            <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1 shadow-[0_0_8px_rgba(239,68,68,0.8)] animate-pulse">
+              {unreadCount! > 99 ? "99+" : unreadCount}
+            </span>
+          )}
+        </Link>
+        {/* Amigos */}
+        <Link href="/friends" className={cn("p-2 rounded-xl", location === "/friends" ? "text-primary shadow-[0_0_12px_hsl(var(--primary)/0.5)]" : "text-muted-foreground")}>
+          <UserPlus className="w-6 h-6" />
+        </Link>
       </nav>
     </div>
   );
