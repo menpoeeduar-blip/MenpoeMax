@@ -137,6 +137,15 @@ export function Shell({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("storage", checkTheme);
   }, []);
 
+  // ── Scroll al inicio en cada cambio de ruta ───────────────────────────────
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    const main = document.querySelector("main");
+    if (main) main.scrollTop = 0;
+  }, [location]);
+
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
   return (

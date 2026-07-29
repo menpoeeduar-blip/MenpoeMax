@@ -219,9 +219,21 @@ function ProfileRedirect() {
   );
 }
 
+function ScrollToTop() {
+  const [location] = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [location]);
+  return null;
+}
+
 function AppRoutes() {
   return (
-    <Switch>
+    <>
+      <ScrollToTop />
+      <Switch>
       <Route path="/sign-in/*?" component={SignInPage} />
       <Route path="/sign-up/*?" component={SignUpPage} />
       <Route path="/" component={() => <ProtectedRoute component={Feed} />} />
@@ -262,7 +274,8 @@ function AppRoutes() {
       <Route path="/profile/:userId" component={() => <ProtectedRoute component={Profile} />} />
       <Route path="/u/:userId" component={() => <ProtectedRoute component={Profile} />} />
       <Route component={NotFound} />
-    </Switch>
+      </Switch>
+    </>
   );
 }
 
