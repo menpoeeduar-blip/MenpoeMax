@@ -127,6 +127,16 @@ export default function Profile() {
   const friendStatus = (profile as any)?.friendStatus || "none";
   const incomingRequestId = (profile as any)?.incomingRequestId;
 
+  const invalidateProfileQueries = () => {
+    qc.invalidateQueries({ queryKey: getGetUserQueryKey(targetUserId) });
+    qc.invalidateQueries({ queryKey: getGetUserQueryKey(userId) });
+    qc.invalidateQueries({ queryKey: ["suggested-users"] });
+    qc.invalidateQueries({ queryKey: ["my-friends"] });
+    qc.invalidateQueries({ queryKey: ["notifications"] });
+    qc.invalidateQueries({ queryKey: ["notifications-unread-count"] });
+    qc.invalidateQueries();
+  };
+
   const handleFriendAction = () => {
     if (!targetUserId || !profile) return;
     if (friendStatus === "friends") {
@@ -134,9 +144,10 @@ export default function Profile() {
         { userId: targetUserId },
         {
           onSuccess: () => {
-            qc.invalidateQueries({ queryKey: getGetUserQueryKey(targetUserId) });
+            invalidateProfileQueries();
             toast({ title: "Amigo eliminado", description: `Eliminaste a ${profile.displayName} de tus amigos.` });
           },
+          onError: () => toast({ title: "Error", description: "No se pudo eliminar amigo.", variant: "destructive" }),
         }
       );
     } else if (friendStatus === "pending_sent") {
@@ -144,9 +155,10 @@ export default function Profile() {
         { userId: targetUserId },
         {
           onSuccess: () => {
-            qc.invalidateQueries({ queryKey: getGetUserQueryKey(targetUserId) });
+            invalidateProfileQueries();
             toast({ title: "Solicitud cancelada", description: "Cancelaste la solicitud de amistad." });
           },
+          onError: () => toast({ title: "Error", description: "No se pudo cancelar la solicitud.", variant: "destructive" }),
         }
       );
     } else if (friendStatus === "pending_received" && incomingRequestId) {
@@ -154,9 +166,10 @@ export default function Profile() {
         { requestId: incomingRequestId },
         {
           onSuccess: () => {
-            qc.invalidateQueries({ queryKey: getGetUserQueryKey(targetUserId) });
+            invalidateProfileQueries();
             toast({ title: "Solicitud aceptada", description: `¡Ahora tú y ${profile.displayName} son amigos!` });
           },
+          onError: () => toast({ title: "Error", description: "No se pudo aceptar la solicitud.", variant: "destructive" }),
         }
       );
     } else {
@@ -164,8 +177,10 @@ export default function Profile() {
         { userId: targetUserId },
         {
           onSuccess: () => {
+            invalidateProfileQueries();
             toast({ title: "Solicitud de amistad enviada", description: `Le enviaste una solicitud a ${profile.displayName}.` });
           },
+          onError: () => toast({ title: "Error", description: "No se pudo enviar la solicitud de amistad.", variant: "destructive" }),
         }
       );
     }
@@ -190,11 +205,11 @@ export default function Profile() {
   const createConv = useStartConversationWithUser();
 
   const handleFollow = () => {
-    if (!profile) return;
+    if (!profile || !targetUserId) return;
     if (profile.isFollowing) {
-      unfollowUser.mutate({ userId: targetUserId }, { onSuccess: () => qc.invalidateQueries({ queryKey: getGetUserQueryKey(targetUserId) }) });
+      unfollowUser.mutate({ userId: targetUserId }, { onSuccess: () => invalidateProfileQueries() });
     } else {
-      followUser.mutate({ userId: targetUserId }, { onSuccess: () => qc.invalidateQueries({ queryKey: getGetUserQueryKey(targetUserId) }) });
+      followUser.mutate({ userId: targetUserId }, { onSuccess: () => invalidateProfileQueries() });
     }
   };
 
