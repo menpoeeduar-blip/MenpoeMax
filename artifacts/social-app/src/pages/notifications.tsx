@@ -162,7 +162,7 @@ export default function Notifications() {
               : filtered.map((notif) => {
                 const typeInfo = TYPE_ICONS[notif.type] ?? TYPE_ICONS.system;
                 const Icon = typeInfo.icon;
-                const isProcessed = processedNotifIds.has(notif.id) || notif.isRead;
+                const isProcessed = processedNotifIds.has(notif.id) || notif.isRead || notif.friendStatus === "friends";
                 const isPendingFriendRequest =
                   !isProcessed &&
                   (notif.title?.toLowerCase().includes("solicitud de amistad") ||

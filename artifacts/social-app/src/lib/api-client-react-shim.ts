@@ -2877,71 +2877,94 @@ export function useGetNotifications() {
     refetchInterval: 3000,
     staleTime: 0,
     queryFn: async () => {
-      const d = load();
-      const normalizeTitle = (type: string, raw?: AnyObj) => {
-        if (raw?.title) return raw.title;
-        if (type === "like") return "Reacción";
-        if (type === "comment") return "Nuevo comentario";
-        if (type === "follow") return "Nuevo seguidor";
-        if (type === "share") return "Publicación compartida";
-        if (type === "job_match") return "Match de empleo";
-        if (type === "message") return "Nuevo mensaje";
-        if (type === "system") return "Actualización";
-        if (type === "birthday") return "Cumpleaños";
-        return "Notificación";
-      };
+      try {
+        const d = load();
+        const normalizeTitle = (type: string, raw?: AnyObj) => {
+          if (raw?.title) return raw.title;
+          if (type === "like") return "Reacción";
+          if (type === "comment") return "Nuevo comentario";
+          if (type === "follow") return "Nuevo seguidor";
+          if (type === "share") return "Publicación compartida";
+          if (type === "job_match") return "Match de empleo";
+          if (type === "message") return "Nuevo mensaje";
+          if (type === "system") return "Actualización";
+          if (type === "birthday") return "Cumpleaños";
+          return "Notificación";
+        };
 
-      const toIso = (v: any) => {
-        if (!v) return now();
-        // Firestore timestamps may arrive as objects with toDate().
-        if (typeof v === "object" && typeof v.toDate === "function") return v.toDate().toISOString();
-        return String(v);
-      };
+        const toIso = (v: any) => {
+          if (!v) return now();
+          if (typeof v === "object" && typeof v.toDate === "function") return v.toDate().toISOString();
+          return String(v);
+        };
 
-      let rawNotifs: AnyObj[] = [];
-      let actorIds = new Set<string>();
+        let rawNotifs: AnyObj[] = [];
+        let actorIds = new Set<string>();
 
-      if (canUseFirestoreSocial()) {
-        const me = await ensureCurrentUserInFirestore(d);
-        const snap = await getDocs(query(notificationsCol, where("recipientId", "==", me.id)));
-        rawNotifs = snap.docs.map((n) => ({ id: n.id, ...(n.data() as AnyObj) }));
-      } else {
-        rawNotifs = d.notifications ?? [];
-      }
+        if (canUseFirestoreSocial()) {
+          const me = await ensureCurrentUserInFirestore(d);
+          if (!me || !me.id) return [];
+          const snap = await getDocs(query(notificationsCol, where("recipientId", "==", me.id)));
+          rawNotifs = snap.docs.map((n) => ({ id: n.id, ...(n.data() as AnyObj) }));
+        } else {
+          rawNotifs = d.notifications ?? [];
+        }
 
-      for (const n of rawNotifs) {
-        const actorId = n.actor?.id ?? n.actorId;
-        if (actorId) actorIds.add(String(actorId));
-      }
-
-      // Build actor map using cached user lookup.
-      const userMap = await getCachedUsersMap([...actorIds], d);
-
-      const normalized = rawNotifs
-        .map((n) => {
-          const type = n.type ? String(n.type) : "system";
-          const title = normalizeTitle(type, n);
-          const body = n.body ?? n.text ?? null;
+        for (const n of rawNotifs) {
           const actorId = n.actor?.id ?? n.actorId;
-          const actor =
-            n.actor ??
-            (actorId ? (() => {
-              const u = userMap.get(String(actorId));
-              return u ? { id: u.id, displayName: u.displayName, avatarUrl: u.avatarUrl } : undefined;
-            })() : undefined);
-          return {
-            ...n,
-            type,
-            title,
-            body,
-            createdAt: toIso(n.createdAt),
-            isRead: !!n.isRead,
-            actor,
-          };
-        })
-        .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+          if (actorId) actorIds.add(String(actorId));
+        }
 
-      return normalized;
+        const meId = currentUserId();
+        const friendStatusMap = new Map<string, string>();
+        if (canUseFirestoreSocial() && meId) {
+          try {
+            const friendReqSnap = await getDocs(query(collection(db, "friendRequests")));
+            friendReqSnap.forEach((docSnap) => {
+              const row = docSnap.data() as AnyObj;
+              if (row.status === "accepted") {
+                if (row.requesterId === meId) friendStatusMap.set(row.addresseeId, "friends");
+                if (row.addresseeId === meId) friendStatusMap.set(row.requesterId, "friends");
+              }
+            });
+          } catch {
+            /* optional */
+          }
+        }
+
+        const userMap = await getCachedUsersMap([...actorIds], d);
+
+        const normalized = rawNotifs
+          .map((n) => {
+            const type = n.type ? String(n.type) : "system";
+            const title = normalizeTitle(type, n);
+            const body = n.body ?? n.text ?? null;
+            const actorId = String(n.actor?.id ?? n.actorId ?? "");
+            const friendStatus = friendStatusMap.get(actorId) || "none";
+            const actor =
+              n.actor ??
+              (actorId ? (() => {
+                const u = userMap.get(actorId);
+                return u ? { id: u.id, displayName: u.displayName, avatarUrl: u.avatarUrl } : undefined;
+              })() : undefined);
+            return {
+              ...n,
+              type,
+              title,
+              body,
+              createdAt: toIso(n.createdAt),
+              isRead: !!n.isRead,
+              friendStatus,
+              actor,
+            };
+          })
+          .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+
+        return normalized;
+      } catch (err) {
+        console.warn("Notifications load warning:", err);
+        return [];
+      }
     },
   });
 }
