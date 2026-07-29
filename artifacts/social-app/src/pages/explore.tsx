@@ -11,6 +11,7 @@ import {
   useFollowUser,
   useJoinCommunity,
   useSendFriendRequest,
+  useAcceptFriendRequest,
   useGetSearchHistory,
   useClearSearchHistory,
   getSearchGlobalQueryKey,
@@ -18,7 +19,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, TrendingUp, Heart, MessageCircle, UserPlus, CheckCircle, Clock, Building2 } from "lucide-react";
+import { Search, TrendingUp, Heart, MessageCircle, UserPlus, UserCheck, CheckCircle, Clock, Building2 } from "lucide-react";
 import { getPageTypeLabel } from "@/lib/page-types";
 import { formatDistanceToNow } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -51,12 +52,25 @@ export default function Explore() {
   const followUser = useFollowUser();
   const joinCommunity = useJoinCommunity();
   const sendFriendRequest = useSendFriendRequest();
+  const acceptFriendRequest = useAcceptFriendRequest();
   const { data: searchHistory } = useGetSearchHistory();
   const clearHistory = useClearSearchHistory();
   const qc = useQueryClient();
   const { toast } = useToast();
 
   const handleSendFriendRequest = (targetUser: any) => {
+    if (targetUser.friendStatus === "pending_received" && targetUser.incomingRequestId) {
+      acceptFriendRequest.mutate(
+        { requestId: targetUser.incomingRequestId },
+        {
+          onSuccess: () => {
+            qc.invalidateQueries();
+            toast({ title: "Solicitud aceptada", description: `¡Ahora tú y ${targetUser.displayName || targetUser.username} son amigos!` });
+          },
+        }
+      );
+      return;
+    }
     sendFriendRequest.mutate(
       { userId: targetUser.id },
       {
@@ -299,20 +313,48 @@ export default function Explore() {
                   <div className="text-sm text-muted-foreground">@{user.username}</div>
                   <div className="text-xs text-muted-foreground mt-1">{user.followersCount} followers</div>
                 </div>
-                <div className="flex gap-2 w-full">
-                  <Button size="sm" className="flex-1" variant={user.isFollowing ? "outline" : "default"} onClick={() => followUser.mutate({ userId: user.id }, { onSuccess: () => qc.invalidateQueries() })} data-testid={`button-follow-${user.id}`}>
-                    <UserPlus className="w-4 h-4 mr-1" />{user.isFollowing ? "Siguiendo" : "Seguir"}
+                <div className="flex gap-2 w-full flex-wrap justify-center">
+                  <Button size="sm" className="flex-1 min-w-[90px]" variant={user.isFollowing ? "outline" : "default"} onClick={() => followUser.mutate({ userId: user.id }, { onSuccess: () => qc.invalidateQueries() })} data-testid={`button-follow-${user.id}`}>
+                    <UserPlus className="w-3.5 h-3.5 mr-1" />{user.isFollowing ? "Siguiendo" : "Seguir"}
                   </Button>
                   <Button
                     size="sm"
-                    variant="outline"
-                    disabled={sendFriendRequest.isPending}
+                    variant={user.friendStatus === "friends" ? "outline" : user.friendStatus === "pending_received" ? "default" : "outline"}
+                    disabled={sendFriendRequest.isPending || acceptFriendRequest.isPending}
                     onClick={() => handleSendFriendRequest(user)}
-                    className="px-3"
-                    title="Enviar solicitud de amistad"
+                    className={`flex-1 min-w-[110px] font-semibold gap-1 text-xs ${
+                      user.friendStatus === "friends"
+                        ? "border-emerald-500/50 text-emerald-400"
+                        : user.friendStatus === "pending_sent"
+                          ? "border-amber-500/50 text-amber-400"
+                          : user.friendStatus === "pending_received"
+                            ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                            : "border-primary/40 text-primary hover:bg-primary/10"
+                    }`}
+                    title="Amistad"
                     data-testid={`button-friend-${user.id}`}
                   >
-                    <UserPlus className="w-4 h-4 text-primary" />
+                    {user.friendStatus === "friends" ? (
+                      <>
+                        <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                        Amigos
+                      </>
+                    ) : user.friendStatus === "pending_sent" ? (
+                      <>
+                        <Clock className="w-3.5 h-3.5 text-amber-400" />
+                        Enviada
+                      </>
+                    ) : user.friendStatus === "pending_received" ? (
+                      <>
+                        <UserCheck className="w-3.5 h-3.5" />
+                        Aceptar
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="w-3.5 h-3.5" />
+                        Añadir
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>

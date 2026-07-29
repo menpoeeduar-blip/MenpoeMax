@@ -903,8 +903,12 @@ export function useLikePost() {
       return { reaction, likesCount: p?.likesCount || 0 };
     },
     onSuccess: () => {
-      // Mantener consistencia entre pestañas/dispositivos y al refrescar.
       qc.invalidateQueries({ queryKey: ["feed"] });
+      qc.invalidateQueries({ queryKey: ["user-posts"] });
+      qc.invalidateQueries({ queryKey: ["trending-posts"] });
+      qc.invalidateQueries({ queryKey: ["all-saved"] });
+      qc.invalidateQueries({ queryKey: ["notifications"] });
+      qc.invalidateQueries();
     },
   });
 }
@@ -1393,7 +1397,71 @@ export function useViewStory() {
   });
 }
 export function useGetMyStats() { return useQuery({ queryKey: ["my-stats"], queryFn: async () => { const d = load(); if (canUseFirestoreSocial()) { const me = await ensureCurrentUserInFirestore(d); const [followers, following, posts] = await Promise.all([getDocs(query(followsCol, where("followingId", "==", me.id))), getDocs(query(followsCol, where("followerId", "==", me.id))), getDocs(query(postsCol, where("authorId", "==", me.id)))]); return { followersCount: followers.size, followingCount: following.size, postsCount: posts.size, likesReceived: 0, viewsReceived: 0 }; } const me = ensureCurrentUser(d); return { followersCount: d.follows.filter((f) => f.followingId === me.id).length, followingCount: d.follows.filter((f) => f.followerId === me.id).length, postsCount: d.posts.filter((p) => p.authorId === me.id).length, likesReceived: 0, viewsReceived: 0 }; } }); }
-export function useGetSuggestedUsers() { return useQuery({ queryKey: ["suggested-users"], staleTime: 120_000, queryFn: async () => { const d = load(); const meId = currentUserId(); if (canUseFirestoreSocial()) { await ensureCurrentUserInFirestore(d); const [usersSnap, followSnap] = await Promise.all([getDocs(query(usersCol, limit(25))), getDocs(query(followsCol, where("followerId", "==", meId)))]); const following = new Set<string>(); followSnap.forEach((f) => following.add((f.data() as AnyObj).followingId)); return usersSnap.docs.map((u) => ({ ...(u.data() as AnyObj), isFollowing: following.has(u.id) })).filter((u) => u.id !== meId); } return d.users.filter((u) => u.id !== meId).map((u) => ({ ...u, isFollowing: d.follows.some((f) => f.followerId === meId && f.followingId === u.id) })); } }); }
+export function useGetSuggestedUsers() {
+  return useQuery({
+    queryKey: ["suggested-users"],
+    staleTime: 0,
+    queryFn: async () => {
+      const d = load();
+      const meId = currentUserId();
+
+      if (canUseFirestoreSocial()) {
+        await ensureCurrentUserInFirestore(d);
+        const [usersSnap, followSnap, friendReqSnap] = await Promise.all([
+          getDocs(query(usersCol, limit(100))),
+          getDocs(query(followsCol, where("followerId", "==", meId))),
+          getDocs(query(collection(db, "friendRequests"))),
+        ]);
+        const following = new Set<string>();
+        followSnap.forEach((f) => following.add((f.data() as AnyObj).followingId));
+
+        const friendStatusMap = new Map<string, { friendStatus: string; incomingRequestId?: string }>();
+        friendReqSnap.forEach((docSnap) => {
+          const row = docSnap.data() as AnyObj;
+          if (row.status === "accepted") {
+            if (row.requesterId === meId) friendStatusMap.set(row.addresseeId, { friendStatus: "friends" });
+            if (row.addresseeId === meId) friendStatusMap.set(row.requesterId, { friendStatus: "friends" });
+          } else if (row.status === "pending") {
+            if (row.requesterId === meId) friendStatusMap.set(row.addresseeId, { friendStatus: "pending_sent" });
+            if (row.addresseeId === meId) friendStatusMap.set(row.requesterId, { friendStatus: "pending_received", incomingRequestId: docSnap.id });
+          }
+        });
+
+        return usersSnap.docs
+          .map((u) => {
+            const data = u.data() as AnyObj;
+            const status = friendStatusMap.get(u.id) || { friendStatus: "none" };
+            return {
+              ...data,
+              id: u.id,
+              isFollowing: following.has(u.id),
+              friendStatus: status.friendStatus,
+              incomingRequestId: status.incomingRequestId ?? null,
+            };
+          })
+          .filter((u) => u.id !== meId);
+      }
+
+      return d.users
+        .filter((u) => u.id !== meId)
+        .map((u) => {
+          const reqOut = d.friendRequests?.find((r) => r.requesterId === meId && r.addresseeId === u.id);
+          const reqIn = d.friendRequests?.find((r) => r.requesterId === u.id && r.addresseeId === meId);
+          let fs = "none";
+          let inId = null;
+          if (reqOut?.status === "accepted" || reqIn?.status === "accepted") fs = "friends";
+          else if (reqOut?.status === "pending") fs = "pending_sent";
+          else if (reqIn?.status === "pending") { fs = "pending_received"; inId = reqIn.id; }
+          return {
+            ...u,
+            isFollowing: d.follows.some((f) => f.followerId === meId && f.followingId === u.id),
+            friendStatus: fs,
+            incomingRequestId: inId,
+          };
+        });
+    },
+  });
+}
 export function useFollowUser() { const qc = useQueryClient(); return useMutation({ mutationFn: async ({ userId }: AnyObj) => { const d = load(); const meId = currentUserId(); if (canUseFirestoreSocial()) { const me = await ensureCurrentUserInFirestore(d); await setDoc(doc(db, "follows", `${me.id}_${userId}`), { followerId: me.id, followingId: userId, createdAt: now() }); await createNotification({ type: "follow", recipientId: userId, actorId: me.id, text: `${me.displayName} empezó a seguirte` }); return { following: true }; } const exists = d.follows.some((f) => f.followerId === meId && f.followingId === userId); if (!exists) d.follows.push({ followerId: meId, followingId: userId }); save(d); return { following: true }; }, onSuccess: () => qc.invalidateQueries() }); }
 export function useUnfollowUser() { const qc = useQueryClient(); return useMutation({ mutationFn: async ({ userId }: AnyObj) => { const d = load(); const meId = currentUserId(); if (canUseFirestoreSocial()) { await deleteDoc(doc(db, "follows", `${meId}_${userId}`)); return { following: false }; } d.follows = d.follows.filter((f) => !(f.followerId === meId && f.followingId === userId)); save(d); return { following: false }; }, onSuccess: () => qc.invalidateQueries() }); }
 export function useGeneratePost() { return useMutation({ mutationFn: async ({ data }: AnyObj) => ({ content: `Idea para "${data.topic}": Comparte tu experiencia, agrega valor practico y termina con una pregunta para tu audiencia.` }) }); }
@@ -2805,7 +2873,8 @@ export function useSetTyping() {
 export function useGetNotifications() {
   return useQuery({
     queryKey: ["notifications"],
-    refetchInterval: 12000,
+    refetchInterval: 3000,
+    staleTime: 0,
     queryFn: async () => {
       const d = load();
       const normalizeTitle = (type: string, raw?: AnyObj) => {
