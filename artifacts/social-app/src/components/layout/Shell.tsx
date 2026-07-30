@@ -93,7 +93,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const { signOut } = useClerk();
   const [darkMode, setDarkMode] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { data: unreadCount } = useGetUnreadNotificationsCount();
+  const { data: _unreadCountRaw } = useGetUnreadNotificationsCount();
+  const notifCount = typeof _unreadCountRaw === "number" ? _unreadCountRaw : 0;
   const { data: me } = useGetMe();
   const { data: isAdmin } = useIsAdmin();
   const profileId = (me as any)?.id || user?.id || "";
@@ -206,9 +207,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
                   isActive ? "bg-primary/25 text-primary shadow-[0_0_18px_hsl(var(--primary)/0.455)]" : "text-muted-foreground hover:bg-white/8"
                 )}>
                   <item.icon className="w-5 h-5" />
-                  {isNotif && (unreadCount ?? 0) > 0 && !isQuietActive && (
+                  {isNotif && notifCount > 0 && !isQuietActive && (
                     <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-accent text-[9px] font-bold text-white shadow-[0_0_12px_hsl(var(--accent)/0.8)]">
-                      {(unreadCount ?? 0) > 9 ? "9+" : unreadCount}
+                      {notifCount > 9 ? "9+" : notifCount}
                     </span>
                   )}
                 </Link>
@@ -347,9 +348,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
         {/* Notificaciones con badge en tiempo real */}
         <Link href="/notifications" className={cn("relative p-2 rounded-xl", location === "/notifications" ? "text-primary shadow-[0_0_12px_hsl(var(--primary)/0.5)]" : "text-muted-foreground")}>
           <Bell className="w-6 h-6" />
-          {(unreadCount ?? 0) > 0 && (
+          {notifCount > 0 && (
             <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1 shadow-[0_0_8px_rgba(239,68,68,0.8)] animate-pulse">
-              {unreadCount! > 99 ? "99+" : unreadCount}
+              {notifCount > 99 ? "99+" : notifCount}
             </span>
           )}
         </Link>
