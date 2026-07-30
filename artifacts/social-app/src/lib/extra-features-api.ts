@@ -484,3 +484,190 @@ export function useBoostPost() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["promote-credits"] }),
   });
 }
+
+// ── PAGE FOLLOW SYSTEM ──────────────────────────────────────────────────────
+
+const PAGE_FOLLOWS_KEY = "socialhub_page_follows_v1";
+
+function loadPageFollows(): Array<{ userId: string; pageId: string; createdAt: string }> {
+  try {
+    const raw = localStorage.getItem(PAGE_FOLLOWS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function savePageFollows(list: Array<{ userId: string; pageId: string; createdAt: string }>) {
+  localStorage.setItem(PAGE_FOLLOWS_KEY, JSON.stringify(list));
+}
+
+/** Check if current user follows a specific page */
+export function useIsFollowingPage(pageId: string) {
+  return useQuery({
+    queryKey: ["page-follow", pageId],
+    enabled: !!pageId,
+    queryFn: async () => {
+      const me = getCurrentUserIdForExtra();
+      if (!me) return false;
+      if (canUseFirestorePages()) {
+        const snap = await getDoc(doc(db, "pageFollows", `${me}_${pageId}`));
+        return snap.exists();
+      }
+      const list = loadPageFollows();
+      return list.some((f) => f.userId === me && f.pageId === pageId);
+    },
+    refetchInterval: 15_000,
+  });
+}
+
+/** Follow a page */
+export function useFollowPage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ pageId, pageName }: { pageId: string; pageName?: string }) => {
+      const me = getCurrentUserIdForExtra();
+      if (!me) throw new Error("No autenticado");
+      if (canUseFirestorePages()) {
+        await setDoc(doc(db, "pageFollows", `${me}_${pageId}`), {
+          userId: me,
+          pageId,
+          createdAt: now(),
+        });
+        // Increment follower count on the page document
+        try {
+          const pageRef = doc(db, "businessPages", pageId);
+          const pageSnap = await getDoc(pageRef);
+          if (pageSnap.exists()) {
+            const current = (pageSnap.data() as any).followersCount ?? 0;
+            await setDoc(pageRef, { followersCount: current + 1 }, { merge: true });
+            // Notify page owner
+            const ownerId = (pageSnap.data() as any).ownerId;
+            if (ownerId && ownerId !== me) {
+              const notifRef = doc(collection(db, "notifications"));
+              await setDoc(notifRef, {
+                type: "page_follow",
+                recipientId: ownerId,
+                actorId: me,
+                pageId,
+                text: `Alguien empezó a seguir tu página "${pageName || ""}"`,
+                read: false,
+                createdAt: now(),
+              });
+            }
+          }
+        } catch { /* best-effort */ }
+        return true;
+      }
+      // localStorage fallback
+      const list = loadPageFollows();
+      if (!list.some((f) => f.userId === me && f.pageId === pageId)) {
+        list.push({ userId: me, pageId, createdAt: now() });
+        savePageFollows(list);
+      }
+      const d = loadExtra();
+      const idx = d.businessPages.findIndex((p) => p.id === pageId);
+      if (idx >= 0) { d.businessPages[idx].followersCount = (d.businessPages[idx].followersCount ?? 0) + 1; saveExtra(d); }
+      return true;
+    },
+    onSuccess: (_r, { pageId }) => {
+      qc.invalidateQueries({ queryKey: ["page-follow", pageId] });
+      qc.invalidateQueries({ queryKey: ["page-followers-count", pageId] });
+      qc.invalidateQueries({ queryKey: ["business-page", pageId] });
+      qc.invalidateQueries({ queryKey: ["business-pages"] });
+      qc.invalidateQueries({ queryKey: ["notifications"] });
+      qc.invalidateQueries({ queryKey: ["notifications-unread-count"] });
+    },
+  });
+}
+
+/** Unfollow a page */
+export function useUnfollowPage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ pageId }: { pageId: string }) => {
+      const me = getCurrentUserIdForExtra();
+      if (!me) throw new Error("No autenticado");
+      if (canUseFirestorePages()) {
+        await deleteDoc(doc(db, "pageFollows", `${me}_${pageId}`));
+        try {
+          const pageRef = doc(db, "businessPages", pageId);
+          const pageSnap = await getDoc(pageRef);
+          if (pageSnap.exists()) {
+            const current = (pageSnap.data() as any).followersCount ?? 1;
+            await setDoc(pageRef, { followersCount: Math.max(0, current - 1) }, { merge: true });
+          }
+        } catch { /* best-effort */ }
+        return false;
+      }
+      const list = loadPageFollows().filter((f) => !(f.userId === me && f.pageId === pageId));
+      savePageFollows(list);
+      const d = loadExtra();
+      const idx = d.businessPages.findIndex((p) => p.id === pageId);
+      if (idx >= 0) { d.businessPages[idx].followersCount = Math.max(0, (d.businessPages[idx].followersCount ?? 1) - 1); saveExtra(d); }
+      return false;
+    },
+    onSuccess: (_r, { pageId }) => {
+      qc.invalidateQueries({ queryKey: ["page-follow", pageId] });
+      qc.invalidateQueries({ queryKey: ["page-followers-count", pageId] });
+      qc.invalidateQueries({ queryKey: ["business-page", pageId] });
+      qc.invalidateQueries({ queryKey: ["business-pages"] });
+    },
+  });
+}
+
+/** Get real-time follower count for a page */
+export function useGetPageFollowersCount(pageId: string) {
+  return useQuery({
+    queryKey: ["page-followers-count", pageId],
+    enabled: !!pageId,
+    refetchInterval: 20_000,
+    queryFn: async () => {
+      if (canUseFirestorePages()) {
+        const snap = await getDocs(query(collection(db, "pageFollows"), where("pageId", "==", pageId)));
+        return snap.size;
+      }
+      const list = loadPageFollows();
+      return list.filter((f) => f.pageId === pageId).length;
+    },
+  });
+}
+
+/** Get posts that belong to a specific page (by pageId field) */
+export function useGetPagePosts(pageId: string) {
+  return useQuery({
+    queryKey: ["page-posts", pageId],
+    enabled: !!pageId,
+    refetchInterval: 30_000,
+    queryFn: async () => {
+      if (canUseFirestorePages()) {
+        const { getDocs: gd, query: q, collection: col, where: wh, orderBy, limit: lim } = await import("firebase/firestore");
+        const postsCol = col(db, "posts");
+        const snap = await gd(q(postsCol, wh("pageId", "==", pageId), orderBy("createdAt", "desc"), lim(50)));
+        const usersSnap = await getDocs(collection(db, "users"));
+        const usersMap = new Map<string, any>();
+        usersSnap.forEach((u) => usersMap.set(u.id, { id: u.id, ...u.data() }));
+        return snap.docs.map((d) => {
+          const data = { id: d.id, ...d.data() } as any;
+          const author = usersMap.get(data.authorId) ?? { id: data.authorId, displayName: "Usuario" };
+          return { ...data, author };
+        });
+      }
+      // localStorage fallback
+      try {
+        const raw = localStorage.getItem("socialhub_data_v1");
+        if (!raw) return [];
+        const d = JSON.parse(raw);
+        const posts = (d.posts ?? []).filter((p: any) => p.pageId === pageId);
+        const users = d.users ?? [];
+        return posts
+          .sort((a: any, b: any) => (a.createdAt < b.createdAt ? 1 : -1))
+          .slice(0, 50)
+          .map((p: any) => ({
+            ...p,
+            author: users.find((u: any) => u.id === p.authorId) ?? { id: p.authorId, displayName: "Usuario" },
+          }));
+      } catch { return []; }
+    },
+  });
+}
