@@ -31,6 +31,7 @@ import { EmployerHubSection } from "@/components/jobs/EmployerHubSection";
 import { CONTRACT_TYPE_OPTIONS } from "@/lib/job-employer";
 import { getJobTypeLabel, getWorkModeLabel } from "@/lib/job-labels";
 import { cn } from "@/lib/utils";
+import { BackButton } from "@/components/BackButton";
 
 type JobsMode = "seeker" | "employer";
 
@@ -355,6 +356,7 @@ export default function Jobs() {
         ) : (
           <>
             <header className="mb-6">
+              <BackButton label="Regresar" />
               <h1 className="text-3xl font-bold neon-title">Centro de empleo</h1>
               <p className="text-muted-foreground text-sm mt-1">
                 Dos espacios independientes: candidatos y empresas. Menpoe conecta talento con oportunidades verificadas.

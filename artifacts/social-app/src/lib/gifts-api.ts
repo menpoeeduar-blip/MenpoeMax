@@ -290,6 +290,67 @@ export function useSendPostGift() {
   });
 }
 
+export function useSendStreamGift() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ streamId, giftId, receiverId }: { streamId: string; giftId: string; receiverId: string }) => {
+      const me = currentUserId();
+      if (!me) throw new Error("Inicia sesión");
+      if (me === receiverId) throw new Error("No puedes enviarte regalos a ti mismo");
+
+      const gift = getGiftById(giftId);
+      if (!gift) throw new Error("Regalo no válido");
+
+      const senderBal = await getBalance(me);
+      if (senderBal < gift.tokens) throw new Error("Saldo insuficiente. Recarga tokens.");
+
+      const newSenderBal = senderBal - gift.tokens;
+      await setBalance(me, newSenderBal);
+      await addTransaction(me, "gift_sent", -gift.tokens, newSenderBal, {
+        streamId,
+        giftId,
+        receiverId,
+      });
+
+      const receiverBal = await getBalance(receiverId);
+      const newReceiverBal = receiverBal + gift.tokens;
+      await setBalance(receiverId, newReceiverBal);
+      await addTransaction(receiverId, "gift_received", gift.tokens, newReceiverBal, {
+        streamId,
+        giftId,
+        senderId: me,
+      });
+
+      const record = {
+        id: rid(),
+        streamId,
+        senderId: me,
+        receiverId,
+        giftId: gift.id,
+        giftName: gift.name,
+        giftEmoji: gift.emoji,
+        tokens: gift.tokens,
+        createdAt: now(),
+      };
+
+      const extra = loadWalletExtra();
+      extra.postGifts.unshift(record);
+      saveWalletExtra({ postGifts: extra.postGifts });
+
+      if (canUseFirestoreWallet()) {
+        await setDoc(doc(db, "streamGifts", record.id), record);
+      }
+
+      return { ...record, gift, balance: newSenderBal };
+    },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ["wallet"] });
+      qc.invalidateQueries({ queryKey: ["wallet-transactions"] });
+      qc.invalidateQueries({ queryKey: ["stream-gifts", vars.streamId] });
+    },
+  });
+}
+
 export function useGetPostGifts(postId: string) {
   return useQuery({
     queryKey: ["post-gifts", postId],

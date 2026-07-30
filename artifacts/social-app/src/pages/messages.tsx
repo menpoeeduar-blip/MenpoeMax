@@ -132,31 +132,31 @@ function MediaPreview({
   );
 }
 
-// ── Read Receipt icon ────────────────────────────────────────────────────────
+// ── Read Receipt icon (Dos chulitos rojos para el visto) ─────────────────────
 function ReadReceipt({ msg }: { msg: any }) {
   if (msg.readAt) {
     return (
-      <span title="Visto" aria-label="Visto" className="flex-none">
-        <CheckCheck className="w-3.5 h-3.5 text-cyan-300" />
+      <span title="Visto (Leído)" aria-label="Visto" className="flex-none inline-flex items-center">
+        <CheckCheck className="w-4 h-4 text-red-500 font-bold drop-shadow-[0_0_8px_rgba(239,68,68,0.95)]" />
       </span>
     );
   }
-  // Sent/Delivered (no readAt yet)
   return (
-    <span title="Enviado" aria-label="Enviado" className="flex-none">
-      <Check className="w-3 h-3 opacity-50" />
+    <span title="Enviado" aria-label="Enviado" className="flex-none inline-flex items-center">
+      <Check className="w-3.5 h-3.5 opacity-60 text-muted-foreground" />
     </span>
   );
 }
 
 // ── Message Bubble ────────────────────────────────────────────────────────────
-function MsgBubble({ msg, isMe, currentUserId, onReply, onReact, onDelete, toast }: {
+function MsgBubble({ msg, isMe, currentUserId, onReply, onReact, onDelete, onDeleteForMe, toast }: {
   msg: any;
   isMe: boolean;
   currentUserId: string;
   onReply: (m: any) => void;
   onReact: (messageId: string, emoji: string) => void;
   onDelete: (messageId: string) => void;
+  onDeleteForMe: (messageId: string) => void;
   toast: (opts: any) => void;
 }) {
   const deleted = !!msg.deletedForEveryone;
@@ -167,10 +167,35 @@ function MsgBubble({ msg, isMe, currentUserId, onReply, onReact, onDelete, toast
     return acc;
   }, {});
 
+  const [showActions, setShowActions] = useState(false);
+  const touchTimerRef = useRef<number | null>(null);
+
+  const handleTouchStart = () => {
+    touchTimerRef.current = window.setTimeout(() => {
+      setShowActions(true);
+    }, 450);
+  };
+
+  const handleTouchEnd = () => {
+    if (touchTimerRef.current) {
+      clearTimeout(touchTimerRef.current);
+      touchTimerRef.current = null;
+    }
+  };
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setShowActions(true);
+  };
+
   return (
     <div
-      className={`flex gap-2 group ${isMe ? "flex-row-reverse" : "flex-row"}`}
+      className={`flex gap-2 group select-none ${isMe ? "flex-row-reverse" : "flex-row"}`}
       data-testid={`message-${msg.id}`}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchMove={handleTouchEnd}
+      onContextMenu={handleContextMenu}
     >
       {!isMe && (
         <img
@@ -187,12 +212,12 @@ function MsgBubble({ msg, isMe, currentUserId, onReply, onReact, onDelete, toast
         )}
 
         <div
-          className={`px-3 py-2 rounded-2xl text-sm ${
+          className={`px-3 py-2 rounded-2xl text-sm transition-all cursor-pointer ${
             deleted
               ? "bg-white/5 italic text-muted-foreground border border-dashed border-border/50"
               : isMe
                 ? "bg-primary text-primary-foreground rounded-br-sm"
-                : "bg-white/10 rounded-bl-sm"
+                : "bg-white/10 rounded-bl-sm hover:bg-white/15"
           }`}
         >
           {deleted ? (
@@ -230,7 +255,7 @@ function MsgBubble({ msg, isMe, currentUserId, onReply, onReact, onDelete, toast
                 <VoiceNotePlayer src={msg.mediaUrl} />
               )}
 
-              {/* Text (only if not exclusively a media message without text) */}
+              {/* Text */}
               {msg.mediaType !== "sticker" && msg.content && (
                 <p className={msg.mediaType ? "mt-1 text-xs opacity-80" : ""}>{msg.content}</p>
               )}
@@ -241,7 +266,7 @@ function MsgBubble({ msg, isMe, currentUserId, onReply, onReact, onDelete, toast
           )}
 
           {/* Timestamp + receipt */}
-          <div className={`text-[10px] mt-1 flex items-center gap-1 ${isMe ? "text-primary-foreground/60 justify-end" : "text-muted-foreground"}`}>
+          <div className={`text-[10px] mt-1 flex items-center gap-1 ${isMe ? "text-primary-foreground/70 justify-end" : "text-muted-foreground"}`}>
             <span>hace {formatDistanceToNow(new Date(msg.createdAt))}</span>
             {isMe && !deleted && <ReadReceipt msg={msg} />}
           </div>
@@ -265,7 +290,7 @@ function MsgBubble({ msg, isMe, currentUserId, onReply, onReact, onDelete, toast
                   <SmilePlus className="w-3.5 h-3.5" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="glass-panel neon-border flex gap-1 p-2">
+              <DropdownMenuContent className="glass-panel neon-border flex gap-1 p-2 z-[220]">
                 {REACTIONS.map((emoji) => (
                   <button
                     key={emoji}
@@ -281,37 +306,94 @@ function MsgBubble({ msg, isMe, currentUserId, onReply, onReact, onDelete, toast
             <button type="button" className="p-1 rounded-md hover:bg-white/10" title="Responder" onClick={() => onReply(msg)}>
               <Reply className="w-3.5 h-3.5" />
             </button>
-            {isMe && (
-              <button
-                type="button"
-                className="p-1 rounded-md hover:bg-white/10 text-destructive"
-                title="Eliminar para todos"
-                onClick={() => onDelete(msg.id)}
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button type="button" className="p-1 rounded-md hover:bg-white/10">
-                  <MoreHorizontal className="w-3.5 h-3.5" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="glass-panel neon-border">
-                <DropdownMenuItem onClick={() => onReply(msg)}>Responder</DropdownMenuItem>
-                {isMe && (
-                  <DropdownMenuItem
-                    className="text-destructive"
-                    onClick={() => onDelete(msg.id)}
-                  >
-                    Eliminar para todos
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <button type="button" className="p-1 rounded-md hover:bg-white/10" title="Más opciones" onClick={() => setShowActions(true)}>
+              <MoreHorizontal className="w-3.5 h-3.5" />
+            </button>
           </div>
         )}
       </div>
+
+      {/* Action Dialog (Touch Long Press / Right Click / More menu) */}
+      {showActions && (
+        <div
+          className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setShowActions(false)}
+        >
+          <div
+            className="w-full max-w-xs glass-panel neon-border rounded-2xl p-4 space-y-3 shadow-2xl animate-in fade-in zoom-in-95"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider text-center">Opciones de mensaje</p>
+            
+            {/* Reacciones rápidas */}
+            <div className="flex justify-around bg-black/30 p-2 rounded-xl border border-white/10">
+              {REACTIONS.map((emoji) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  className="text-xl hover:scale-125 transition"
+                  onClick={() => {
+                    onReact(msg.id, emoji);
+                    setShowActions(false);
+                  }}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+
+            <div className="space-y-1">
+              {!deleted && (
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start gap-2 text-sm rounded-xl"
+                  onClick={() => {
+                    onReply(msg);
+                    setShowActions(false);
+                  }}
+                >
+                  <Reply className="w-4 h-4 text-primary" />
+                  Responder
+                </Button>
+              )}
+
+              <Button
+                variant="ghost"
+                className="w-full justify-start gap-2 text-sm text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 rounded-xl"
+                onClick={() => {
+                  onDeleteForMe(msg.id);
+                  setShowActions(false);
+                }}
+              >
+                <Trash2 className="w-4 h-4" />
+                Eliminar para mí
+              </Button>
+
+              {isMe && !deleted && (
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start gap-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-xl"
+                  onClick={() => {
+                    onDelete(msg.id);
+                    setShowActions(false);
+                  }}
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Eliminar para todos
+                </Button>
+              )}
+
+              <Button
+                variant="outline"
+                className="w-full text-xs rounded-xl mt-2"
+                onClick={() => setShowActions(false)}
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -556,6 +638,27 @@ function ChatWindow({
     });
   };
 
+  const [hiddenMsgIds, setHiddenMsgIds] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("hidden_msgs_v1") || "[]");
+    } catch {
+      return [];
+    }
+  });
+
+  const handleDeleteForMe = (messageId: string) => {
+    const next = [...hiddenMsgIds, messageId];
+    setHiddenMsgIds(next);
+    try {
+      localStorage.setItem("hidden_msgs_v1", JSON.stringify(next));
+    } catch {
+      /* ignore */
+    }
+    toast({ title: "Mensaje eliminado para ti" });
+  };
+
+  const visibleMessages = messages?.filter((m: any) => !hiddenMsgIds.includes(m.id));
+
   const canSend = !sendMessage.isPending && (
     !!text.trim() || !!pendingSticker || !!pendingMedia
   );
@@ -581,14 +684,14 @@ function ChatWindow({
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {isLoading
           ? [...Array(5)].map((_, i) => <div key={i} className="h-10 bg-muted rounded-2xl animate-pulse w-2/3" />)
-          : messages?.length === 0
+          : visibleMessages?.length === 0
             ? (
               <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3">
                 <MessageSquare className="w-12 h-12" />
                 <p>No hay mensajes aún. ¡Saluda primero!</p>
               </div>
             )
-            : messages?.map((msg) => {
+            : visibleMessages?.map((msg) => {
               const m = msg as any;
               return (
                 <MsgBubble
@@ -604,6 +707,7 @@ function ChatWindow({
                       { onSuccess: () => toast({ title: "Mensaje eliminado para todos" }) },
                     );
                   }}
+                  onDeleteForMe={handleDeleteForMe}
                   toast={toast}
                 />
               );

@@ -204,7 +204,13 @@ function StreamViewer({ streamId, onBack }: { streamId: string; onBack: () => vo
           </div>
         </div>
         {me && stream.isLive && (
-          <LiveChatPanel streamId={streamId} userId={me.id} displayName={me.displayName || "Usuario"} />
+          <LiveChatPanel
+            streamId={streamId}
+            userId={me.id}
+            displayName={me.displayName || "Usuario"}
+            hostId={stream.hostId}
+            hostName={host?.displayName || "Anfitrión"}
+          />
         )}
       </div>
     </div>

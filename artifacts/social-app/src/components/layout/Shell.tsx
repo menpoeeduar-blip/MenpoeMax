@@ -4,7 +4,7 @@ import {
   Home, Compass, PlaySquare, MessageSquare, Bell, BellOff,
   Briefcase, ShoppingBag, Users, Calendar, Radio, Menu,
   LogOut, UserCog, Moon, Sun, UserPlus,
-  Image, Bookmark, Building2, BarChart3, Shield, HelpCircle,
+  Image, Bookmark, Building2, BarChart3, Shield, HelpCircle, ArrowLeft,
   Sparkles, Settings2, Cake, Clock, Cog, Coins, ShieldCheck, FileText, Flag,
 } from "lucide-react";
 import { GlobalSearch } from "@/components/layout/GlobalSearch";
@@ -162,7 +162,24 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <div className="h-full w-1/3 animate-[neon-line-sweep_2.8s_linear_infinite] bg-gradient-to-r from-transparent via-cyan-400 to-fuchsia-500 shadow-[0_0_12px_#22d3ee]" />
         </div>
         <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between px-3 md:px-6">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            {location !== "/" && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof window !== "undefined" && window.history.length > 1) {
+                    window.history.back();
+                  } else {
+                    window.location.href = "/";
+                  }
+                }}
+                className="p-2 rounded-xl bg-white/10 border border-primary/30 text-primary hover:bg-primary/20 transition-all flex items-center justify-center shrink-0 shadow-[0_0_10px_rgba(34,211,238,0.3)]"
+                title="Regresar a la sección anterior"
+                aria-label="Regresar"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+            )}
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Abrir menú"><Menu className="w-5 h-5" /></Button>

@@ -2,16 +2,19 @@ import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { GIFT_CATALOG, formatTokens } from "@/lib/gifts";
-import { useGetWallet, useSendPostGift } from "@workspace/api-client-react";
+import { useGetWallet } from "@workspace/api-client-react";
+import { useSendPostGift, useSendStreamGift } from "@/lib/gifts-api";
 import { cn } from "@/lib/utils";
 import { Coins, Gift, X } from "lucide-react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 
 export type GiftPickerTarget = {
-  postId: string;
+  postId?: string;
+  streamId?: string;
   receiverId: string;
   receiverName?: string;
+  onSuccessSent?: (giftEmoji: string, giftName: string, tokens: number) => void;
 };
 
 type Props = {
@@ -22,12 +25,14 @@ type Props = {
 
 export function GiftPickerSheet({ open, onOpenChange, target }: Props) {
   const { data: wallet } = useGetWallet();
-  const sendGift = useSendPostGift();
+  const sendPostGift = useSendPostGift();
+  const sendStreamGift = useSendStreamGift();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [selected, setSelected] = useState<string | null>(null);
 
   const balance = wallet?.balance ?? 0;
+  const isPending = sendPostGift.isPending || sendStreamGift.isPending;
 
   const close = () => {
     setSelected(null);
@@ -42,28 +47,50 @@ export function GiftPickerSheet({ open, onOpenChange, target }: Props) {
       toast({ title: "Saldo insuficiente", description: "Recarga tokens en tu billetera.", variant: "destructive" });
       return;
     }
-    sendGift.mutate(
-      { postId: target.postId, giftId: selected, receiverId: target.receiverId },
-      {
-        onSuccess: () => {
-          toast({
-            title: "¡Regalo enviado!",
-            description: `${gift.emoji} ${gift.name} para ${target.receiverName ?? "el creador"}`,
-          });
-          close();
+
+    if (target.streamId) {
+      sendStreamGift.mutate(
+        { streamId: target.streamId, giftId: selected, receiverId: target.receiverId },
+        {
+          onSuccess: () => {
+            toast({
+              title: "¡Regalo en vivo enviado!",
+              description: `${gift.emoji} ${gift.name} para ${target.receiverName ?? "el anfitrión"}`,
+            });
+            if (target.onSuccessSent) {
+              target.onSuccessSent(gift.emoji, gift.name, gift.tokens);
+            }
+            close();
+          },
+          onError: (err: Error) => {
+            toast({ title: "Error", description: err.message, variant: "destructive" });
+          },
         },
-        onError: (err: Error) => {
-          toast({ title: "Error", description: err.message, variant: "destructive" });
+      );
+    } else if (target.postId) {
+      sendPostGift.mutate(
+        { postId: target.postId, giftId: selected, receiverId: target.receiverId },
+        {
+          onSuccess: () => {
+            toast({
+              title: "¡Regalo enviado!",
+              description: `${gift.emoji} ${gift.name} para ${target.receiverName ?? "el creador"}`,
+            });
+            close();
+          },
+          onError: (err: Error) => {
+            toast({ title: "Error", description: err.message, variant: "destructive" });
+          },
         },
-      },
-    );
+      );
+    }
   };
 
   if (!target) return null;
 
   return (
     <Sheet open={open} onOpenChange={(o) => { if (!o) close(); else onOpenChange(true); }}>
-      <SheetContent side="bottom" className="glass-panel neon-border border-t rounded-t-3xl h-[85vh] p-0 flex flex-col">
+      <SheetContent side="bottom" className="glass-panel neon-border border-t rounded-t-3xl h-[85vh] p-0 flex flex-col z-[250]">
         <SheetHeader className="p-4 pr-14 border-b border-primary/20 relative shrink-0">
           <button
             type="button"
@@ -75,7 +102,7 @@ export function GiftPickerSheet({ open, onOpenChange, target }: Props) {
           </button>
           <SheetTitle className="neon-title flex items-center gap-2 text-left">
             <Gift className="w-5 h-5 text-accent" />
-            Enviar regalo
+            Enviar regalo en vivo
           </SheetTitle>
           <div className="flex items-center justify-between text-sm mt-2">
             <span className="text-muted-foreground">Para {target.receiverName ?? "creador"}</span>
@@ -116,10 +143,10 @@ export function GiftPickerSheet({ open, onOpenChange, target }: Props) {
         <div className="p-4 border-t border-primary/20 space-y-2 shrink-0">
           <Button
             className="w-full neon-btn rounded-xl"
-            disabled={!selected || sendGift.isPending}
+            disabled={!selected || isPending}
             onClick={handleSend}
           >
-            {sendGift.isPending ? "Enviando..." : selected ? "Confirmar regalo" : "Elige un regalo"}
+            {isPending ? "Enviando..." : selected ? "Confirmar regalo" : "Elige un regalo"}
           </Button>
           <button
             type="button"
