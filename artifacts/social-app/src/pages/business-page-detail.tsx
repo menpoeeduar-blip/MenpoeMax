@@ -17,6 +17,7 @@ import {
 import { getPageTypeLabel } from "@/lib/page-types";
 import { InviteToGroupModal } from "@/components/InviteToGroupModal";
 import { SharePostDialog } from "@/components/SharePostDialog";
+import { CreatePostBox } from "@/components/feed/CreatePostBox";
 import {
   ArrowLeft, Camera, Settings, X, Plus, ImageIcon, Save, Shield,
   Trash2, Globe, Lock, Users, Building2, Briefcase, UserPlus,
@@ -282,41 +283,11 @@ export default function BusinessPageDetail() {
         {/* ── FEED TAB ─────────────────────────────────────────────────── */}
         {activeTab === "feed" && (
           <div className="space-y-4">
-            {/* Post composer — available for all users */}
-            <div className="glass-panel neon-border rounded-2xl p-4 space-y-3">
-              <Textarea
-                value={postText}
-                onChange={(e) => setPostText(e.target.value)}
-                placeholder={`Escribe algo en ${p.name}...`}
-                className="bg-white/5 border-border/40 rounded-xl resize-none min-h-[80px] text-sm"
-              />
-              {postImageUrl && (
-                <div className="relative rounded-xl overflow-hidden border border-border/40">
-                  <img src={postImageUrl} className="w-full max-h-64 object-cover" alt="" />
-                  <button type="button" onClick={() => setPostImageUrl(null)} className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 hover:bg-black/80 transition-colors">
-                    <X className="w-4 h-4 text-white" />
-                  </button>
-                </div>
-              )}
-              <div className="flex items-center justify-between gap-3 flex-wrap">
-                <div className="flex items-center gap-2">
-                  <button type="button" onClick={() => postMediaRef.current?.click()} disabled={uploadingMedia}
-                    className="p-2 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
-                    {uploadingMedia ? <div className="w-5 h-5 border-2 border-primary/40 border-t-primary rounded-full animate-spin" /> : <ImageIcon className="w-5 h-5" />}
-                  </button>
-                  <input ref={postMediaRef} type="file" accept="image/*,video/*" className="hidden" onChange={handlePostMedia} />
-                  <button type="button"
-                    onClick={() => setPostVisibility(v => v === "publico" ? "privado" : "publico")}
-                    className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-xs text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors">
-                    {postVisibility === "publico" ? <Globe className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
-                    {postVisibility === "publico" ? "Público" : "Privado"}
-                  </button>
-                </div>
-                <Button size="sm" onClick={handlePublishPost} disabled={createPost.isPending || (!postText.trim() && !postImageUrl)} className="neon-btn rounded-xl px-5">
-                  {createPost.isPending ? "Publicando..." : "Publicar"}
-                </Button>
-              </div>
-            </div>
+            {/* Full post composer with all tools (IA, Audio, Poll, Live, GPS, Stickers, Files) */}
+            <CreatePostBox
+              pageId={id}
+              placeholder={`Escribe algo en ${p.name}...`}
+            />
 
             {/* Posts list */}
             {((pagePosts ?? []) as any[]).length === 0 ? (

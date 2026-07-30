@@ -22,6 +22,8 @@ export type CreatePostBoxProps = {
   onPostCreated?: () => void;
   className?: string;
   defaultVisibility?: "publico" | "amigos" | "solo_yo";
+  pageId?: string;
+  communityId?: string;
 };
 
 export function CreatePostBox({
@@ -29,6 +31,8 @@ export function CreatePostBox({
   onPostCreated,
   className = "",
   defaultVisibility = "publico",
+  pageId,
+  communityId,
 }: CreatePostBoxProps) {
   const { data: me } = useGetMe();
   const { user: clerkUser } = useUser();
@@ -242,6 +246,8 @@ export function CreatePostBox({
           location: location.trim() || undefined,
           streamUrl: isCreatingLive ? streamUrl.trim() : undefined,
           poll,
+          pageId,
+          communityId,
         },
       },
       {
@@ -254,10 +260,10 @@ export function CreatePostBox({
           setStreamUrl("");
           setLocation("");
           setExpanded(false);
+          if (pageId) qc.invalidateQueries({ queryKey: ["page-posts", pageId] });
+          if (communityId) qc.invalidateQueries({ queryKey: ["community-posts", communityId] });
           qc.invalidateQueries({ queryKey: ["feed"] });
-          qc.invalidateQueries({ queryKey: ["user-posts"] });
-          qc.invalidateQueries({ predicate: (q) => String(q.queryKey[0]).startsWith("user") });
-          toast({ title: "Publicación creada", description: "Se ha compartido correctamente." });
+          toast({ title: "Publicación creada", description: "Tu contenido ya está visible." });
           if (onPostCreated) onPostCreated();
         },
         onError: () => toast({ title: "No se pudo publicar", description: "Revisa tu conexión e inténtalo de nuevo.", variant: "destructive" }),

@@ -22,6 +22,7 @@ import { uploadFile } from "@/lib/upload";
 import { useToast } from "@/hooks/use-toast";
 import { SharePostDialog } from "@/components/SharePostDialog";
 import { InviteToGroupModal } from "@/components/InviteToGroupModal";
+import { CreatePostBox } from "@/components/feed/CreatePostBox";
 import { CommentsPanel } from "@/components/comments/CommentsPanel";
 import {
   Search, Users, Globe, Lock, ArrowLeft, Plus, X, MessageCircle, Heart,
@@ -207,21 +208,11 @@ function CommunityDetail({ communityId, onBack }: { communityId: string; onBack:
         </div>
       </div>
 
-      {/* Post composer */}
-      {isJoined && (
-        <div className="glass-panel neon-border rounded-2xl p-4 space-y-3">
-          <textarea
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Publica en la comunidad..."
-            rows={2}
-            className="w-full rounded-xl bg-white/5 border border-input px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-          />
-          <Button className="neon-btn rounded-xl w-full" onClick={publish} disabled={createPost.isPending}>
-            {createPost.isPending ? "Publicando..." : "Publicar"}
-          </Button>
-        </div>
-      )}
+      {/* Post composer with all tools (IA, Audio, Poll, Live, GPS, Stickers, Files) */}
+      <CreatePostBox
+        communityId={communityId}
+        placeholder={`Publica en la comunidad ${c.name}...`}
+      />
 
       {/* Posts */}
       <div className="space-y-3">
