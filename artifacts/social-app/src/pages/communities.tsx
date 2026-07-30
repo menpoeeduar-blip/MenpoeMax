@@ -110,7 +110,10 @@ function CommunityDetail({ communityId, onBack }: { communityId: string; onBack:
   const [sharePost, setSharePost] = useState<any>(null);
   const [showInvite, setShowInvite] = useState(false);
 
-  const isAdmin = community?.creatorId === (me as any)?.id;
+  const meId = (me as any)?.id;
+  const isCreator = community?.creatorId === meId;
+  const isCommunityAdmin = Array.isArray((community as any)?.admins) && (community as any).admins.includes(meId);
+  const canManageCommunity = isCreator || isCommunityAdmin;
   const isJoined = community?.isJoined;
 
   const uploadCover = async (file: File) => {
@@ -145,7 +148,7 @@ function CommunityDetail({ communityId, onBack }: { communityId: string; onBack:
       <div className="glass-panel neon-border rounded-3xl overflow-hidden">
         <div className="relative h-44 sm:h-56 bg-gradient-to-br from-primary/30 via-accent/20 to-sky-500/20 group">
           {c.coverUrl && <img src={c.coverUrl} className="w-full h-full object-cover absolute inset-0" alt="" />}
-          {isAdmin && (
+          {canManageCommunity && (
             <>
               <button
                 type="button"
@@ -176,7 +179,7 @@ function CommunityDetail({ communityId, onBack }: { communityId: string; onBack:
         <div className="flex items-center justify-between px-5 py-3 flex-wrap gap-2">
           {c.description && <p className="text-sm text-muted-foreground flex-1">{c.description}</p>}
           <div className="flex items-center gap-2 ml-auto">
-            {isAdmin && (
+            {canManageCommunity && (
               <Button
                 size="sm"
                 variant="outline"
@@ -186,7 +189,7 @@ function CommunityDetail({ communityId, onBack }: { communityId: string; onBack:
                 <UserPlus className="w-3.5 h-3.5" /> Invitar
               </Button>
             )}
-            {isAdmin && (
+            {canManageCommunity && (
               <Button size="sm" variant="outline" className="rounded-xl gap-1.5 border-primary/30 hover:border-primary text-xs">
                 <Settings className="w-3.5 h-3.5" /> Configurar
               </Button>

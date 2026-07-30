@@ -54,7 +54,10 @@ export default function BusinessPageDetail() {
   const postMediaRef = useRef<HTMLInputElement>(null);
 
   const p = page as any;
-  const isOwner = p?.ownerId === (me as any)?.id;
+  const meId = (me as any)?.id;
+  const isOwner = p?.ownerId === meId;
+  const isAdminRole = (p?.admins ?? []).some((a: any) => a.id === meId || a === meId);
+  const canManage = isOwner || isAdminRole;
   const followersCount = liveFollowers ?? p?.followersCount ?? 0;
 
   const [activeTab, setActiveTab] = useState<PageTab>("feed");
@@ -185,7 +188,7 @@ export default function BusinessPageDetail() {
           {/* Cover */}
           <div className="relative h-44 sm:h-56 bg-gradient-to-br from-primary/30 via-accent/20 to-emerald-500/20 group">
             {p.coverUrl && <img src={p.coverUrl} className="w-full h-full object-cover absolute inset-0" alt="" />}
-            {isOwner && (
+            {canManage && (
               <>
                 <button
                   type="button"
@@ -229,22 +232,22 @@ export default function BusinessPageDetail() {
                 </Button>
               </Link>
 
-              {/* Invite (owner only) */}
-              {isOwner && (
+              {/* Invite (creators & admins) */}
+              {canManage && (
                 <Button size="sm" variant="outline" className="rounded-xl gap-1.5 border-violet-500/30 text-violet-400 hover:border-violet-500 text-xs" onClick={() => setShowInvite(true)}>
                   <UserPlus className="w-3.5 h-3.5" /> Invitar
                 </Button>
               )}
 
-              {/* Settings (owner only) */}
-              {isOwner && (
+              {/* Settings (creators & admins) */}
+              {canManage && (
                 <Button size="sm" variant="outline" className="rounded-xl gap-1.5 border-primary/30 hover:border-primary text-xs" onClick={openSettings}>
                   <Settings className="w-3.5 h-3.5" /> Configurar
                 </Button>
               )}
 
-              {/* Follow (non-owner) */}
-              {!isOwner && (
+              {/* Follow (non-owner/non-admin) */}
+              {!canManage && (
                 <Button
                   size="sm"
                   variant={isFollowing ? "outline" : "default"}
@@ -260,7 +263,7 @@ export default function BusinessPageDetail() {
 
           {/* Tabs */}
           <div className="flex border-t border-border/40 px-2">
-            {(["feed", "about", ...(isOwner ? ["settings"] : [])] as PageTab[]).map((tab) => (
+            {(["feed", "about", ...(canManage ? ["settings"] : [])] as PageTab[]).map((tab) => (
               <button
                 key={tab}
                 type="button"
@@ -279,43 +282,41 @@ export default function BusinessPageDetail() {
         {/* ── FEED TAB ─────────────────────────────────────────────────── */}
         {activeTab === "feed" && (
           <div className="space-y-4">
-            {/* Post composer — owner only */}
-            {isOwner && (
-              <div className="glass-panel neon-border rounded-2xl p-4 space-y-3">
-                <Textarea
-                  value={postText}
-                  onChange={(e) => setPostText(e.target.value)}
-                  placeholder={`Escribe algo en ${p.name}...`}
-                  className="bg-white/5 border-border/40 rounded-xl resize-none min-h-[80px] text-sm"
-                />
-                {postImageUrl && (
-                  <div className="relative rounded-xl overflow-hidden border border-border/40">
-                    <img src={postImageUrl} className="w-full max-h-64 object-cover" alt="" />
-                    <button type="button" onClick={() => setPostImageUrl(null)} className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 hover:bg-black/80 transition-colors">
-                      <X className="w-4 h-4 text-white" />
-                    </button>
-                  </div>
-                )}
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <div className="flex items-center gap-2">
-                    <button type="button" onClick={() => postMediaRef.current?.click()} disabled={uploadingMedia}
-                      className="p-2 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
-                      {uploadingMedia ? <div className="w-5 h-5 border-2 border-primary/40 border-t-primary rounded-full animate-spin" /> : <ImageIcon className="w-5 h-5" />}
-                    </button>
-                    <input ref={postMediaRef} type="file" accept="image/*,video/*" className="hidden" onChange={handlePostMedia} />
-                    <button type="button"
-                      onClick={() => setPostVisibility(v => v === "publico" ? "privado" : "publico")}
-                      className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-xs text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors">
-                      {postVisibility === "publico" ? <Globe className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
-                      {postVisibility === "publico" ? "Público" : "Privado"}
-                    </button>
-                  </div>
-                  <Button size="sm" onClick={handlePublishPost} disabled={createPost.isPending || (!postText.trim() && !postImageUrl)} className="neon-btn rounded-xl px-5">
-                    {createPost.isPending ? "Publicando..." : "Publicar"}
-                  </Button>
+            {/* Post composer — available for all users */}
+            <div className="glass-panel neon-border rounded-2xl p-4 space-y-3">
+              <Textarea
+                value={postText}
+                onChange={(e) => setPostText(e.target.value)}
+                placeholder={`Escribe algo en ${p.name}...`}
+                className="bg-white/5 border-border/40 rounded-xl resize-none min-h-[80px] text-sm"
+              />
+              {postImageUrl && (
+                <div className="relative rounded-xl overflow-hidden border border-border/40">
+                  <img src={postImageUrl} className="w-full max-h-64 object-cover" alt="" />
+                  <button type="button" onClick={() => setPostImageUrl(null)} className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 hover:bg-black/80 transition-colors">
+                    <X className="w-4 h-4 text-white" />
+                  </button>
                 </div>
+              )}
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => postMediaRef.current?.click()} disabled={uploadingMedia}
+                    className="p-2 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
+                    {uploadingMedia ? <div className="w-5 h-5 border-2 border-primary/40 border-t-primary rounded-full animate-spin" /> : <ImageIcon className="w-5 h-5" />}
+                  </button>
+                  <input ref={postMediaRef} type="file" accept="image/*,video/*" className="hidden" onChange={handlePostMedia} />
+                  <button type="button"
+                    onClick={() => setPostVisibility(v => v === "publico" ? "privado" : "publico")}
+                    className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-xs text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors">
+                    {postVisibility === "publico" ? <Globe className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+                    {postVisibility === "publico" ? "Público" : "Privado"}
+                  </button>
+                </div>
+                <Button size="sm" onClick={handlePublishPost} disabled={createPost.isPending || (!postText.trim() && !postImageUrl)} className="neon-btn rounded-xl px-5">
+                  {createPost.isPending ? "Publicando..." : "Publicar"}
+                </Button>
               </div>
-            )}
+            </div>
 
             {/* Posts list */}
             {((pagePosts ?? []) as any[]).length === 0 ? (
