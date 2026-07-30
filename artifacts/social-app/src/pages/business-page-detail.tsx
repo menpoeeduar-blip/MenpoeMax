@@ -233,12 +233,10 @@ export default function BusinessPageDetail() {
                 </Button>
               </Link>
 
-              {/* Invite (creators & admins) */}
-              {canManage && (
-                <Button size="sm" variant="outline" className="rounded-xl gap-1.5 border-violet-500/30 text-violet-400 hover:border-violet-500 text-xs" onClick={() => setShowInvite(true)}>
-                  <UserPlus className="w-3.5 h-3.5" /> Invitar
-                </Button>
-              )}
+              {/* Invite (available for all registered users) */}
+              <Button size="sm" variant="outline" className="rounded-xl gap-1.5 border-violet-500/30 text-violet-400 hover:border-violet-500 text-xs" onClick={() => setShowInvite(true)}>
+                <UserPlus className="w-3.5 h-3.5" /> Invitar
+              </Button>
 
               {/* Settings (creators & admins) */}
               {canManage && (

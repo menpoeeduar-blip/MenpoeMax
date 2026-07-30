@@ -180,16 +180,15 @@ function CommunityDetail({ communityId, onBack }: { communityId: string; onBack:
         <div className="flex items-center justify-between px-5 py-3 flex-wrap gap-2">
           {c.description && <p className="text-sm text-muted-foreground flex-1">{c.description}</p>}
           <div className="flex items-center gap-2 ml-auto">
-            {canManageCommunity && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="rounded-xl gap-1.5 border-primary/30 hover:border-primary text-xs"
-                onClick={() => setShowInvite(true)}
-              >
-                <UserPlus className="w-3.5 h-3.5" /> Invitar
-              </Button>
-            )}
+            {/* Invite (available for all registered users) */}
+            <Button
+              size="sm"
+              variant="outline"
+              className="rounded-xl gap-1.5 border-violet-500/30 text-violet-400 hover:border-violet-500 text-xs"
+              onClick={() => setShowInvite(true)}
+            >
+              <UserPlus className="w-3.5 h-3.5" /> Invitar
+            </Button>
             {canManageCommunity && (
               <Button size="sm" variant="outline" className="rounded-xl gap-1.5 border-primary/30 hover:border-primary text-xs">
                 <Settings className="w-3.5 h-3.5" /> Configurar

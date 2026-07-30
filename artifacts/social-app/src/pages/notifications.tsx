@@ -39,7 +39,7 @@ const INVITE_TYPES = new Set(["group_invite", "community_invite", "page_invite"]
 const FRIEND_REQ_TYPES = new Set(["friend_request", "follow"]);
 
 export default function Notifications() {
-  const { data: notifications, isLoading } = useGetNotifications({ query: { refetchInterval: 10_000 } });
+  const { data: notifications, isLoading } = useGetNotifications({ query: { refetchInterval: 3_000, staleTime: 0 } });
   const markAllRead = useMarkAllNotificationsRead();
   const acceptFriend = useAcceptFriendRequest();
   const rejectFriend = useRejectFriendRequest();
