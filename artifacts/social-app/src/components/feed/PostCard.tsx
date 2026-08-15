@@ -23,6 +23,7 @@ import {
   Heart, MessageCircle, Share2, Bookmark, MoreHorizontal,
   CheckCircle, MapPin, Radio, Flame, Pause, Play, X, Globe, Lock, Users as UsersIcon, Building2,
   Trash2, Edit3, Pin, PinOff, MessageSquareOff, MessageSquare as MessageSquareIcon, Star,
+  ShoppingBag,
 } from "lucide-react";
 import { SharePostDialog } from "@/components/SharePostDialog";
 import { PostGiftsStrip } from "@/components/gifts/PostGiftsStrip";
@@ -33,6 +34,7 @@ import { useToast } from "@/hooks/use-toast";
 import { createContentReport } from "@/lib/moderation";
 import { auth } from "@/lib/firebase";
 import { AdPostCard } from "@/components/ads/AdPostCard";
+import { formatCOP } from "@/lib/format-currency";
 
 export type PostCardProps = {
   post: any;
@@ -538,6 +540,35 @@ const PostCardInner = memo(function PostCardInner({ post, showComments: initialS
 
       {/* Texto del post */}
       {post.content && <p className="text-sm whitespace-pre-wrap mb-3 leading-relaxed">{post.content}</p>}
+
+      {/* RENDER DE PRODUCTO DE MARKETPLACE */}
+      {(post.postType === "marketplace" || post.marketplaceListing) && (
+        <div className="mb-3 p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-cyan-500/10 via-primary/10 to-purple-500/10 border border-cyan-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-12 h-12 rounded-xl bg-cyan-500/20 flex items-center justify-center flex-none border border-cyan-400/40">
+              <ShoppingBag className="w-6 h-6 text-cyan-400" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-[10px] text-cyan-400 font-bold uppercase tracking-wider block font-mono">
+                🛍️ Menpoe Marketplace
+              </span>
+              <h4 className="font-bold text-sm text-foreground truncate">
+                {post.marketplaceListing?.title || "Producto en venta"}
+              </h4>
+              {post.marketplaceListing?.price ? (
+                <div className="text-sm font-extrabold text-cyan-300">
+                  {formatCOP(post.marketplaceListing.price)}
+                </div>
+              ) : null}
+            </div>
+          </div>
+          <Link href={post.marketplaceListing?.id ? `/marketplace/${post.marketplaceListing.id}` : "/marketplace"}>
+            <Button size="sm" className="neon-btn rounded-xl text-xs font-bold gap-1.5 flex-none w-full sm:w-auto">
+              <ShoppingBag className="w-3.5 h-3.5" /> Ver en Marketplace
+            </Button>
+          </Link>
+        </div>
+      )}
 
       {/* RENDER DE ENCUESTAS */}
       {post.poll && (
