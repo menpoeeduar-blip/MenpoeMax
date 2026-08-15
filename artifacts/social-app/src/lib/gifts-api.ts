@@ -516,3 +516,315 @@ export function useDemoTopUpWallet() {
   });
 }
 
+export type BankingConfig = {
+  nequiPhone: string;
+  nequiName: string;
+  nequiQrUrl?: string;
+  nequiEnabled: boolean;
+
+  mpAlias: string;
+  mpEmail: string;
+  mpPaymentLink?: string;
+  mpName: string;
+  mpQrUrl?: string;
+  mpEnabled: boolean;
+
+  bancolombiaAccount: string;
+  bancolombiaType: "Ahorros" | "Corriente";
+  bancolombiaName: string;
+  bancolombiaEnabled: boolean;
+
+  daviplataPhone: string;
+  daviplataName: string;
+  daviplataEnabled: boolean;
+};
+
+export const DEFAULT_BANKING_CONFIG: BankingConfig = {
+  nequiPhone: "3123456789",
+  nequiName: "Menpoe Social Pagos",
+  nequiQrUrl: "",
+  nequiEnabled: true,
+
+  mpAlias: "menpoe.mp",
+  mpEmail: "pagos@menpoe.com",
+  mpPaymentLink: "https://link.mercadopago.com.co/menpoesocial",
+  mpName: "Menpoe Colombia Oficial",
+  mpQrUrl: "",
+  mpEnabled: true,
+
+  bancolombiaAccount: "123-456789-01",
+  bancolombiaType: "Ahorros",
+  bancolombiaName: "Menpoe Social S.A.S.",
+  bancolombiaEnabled: true,
+
+  daviplataPhone: "3123456789",
+  daviplataName: "Menpoe Social Pagos",
+  daviplataEnabled: true,
+};
+
+const BANKING_STORAGE_KEY = "menpoe_banking_config_v1";
+
+export function useGetBankingConfig() {
+  return useQuery({
+    queryKey: ["banking-config"],
+    queryFn: async (): Promise<BankingConfig> => {
+      if (canUseFirestoreWallet()) {
+        try {
+          const snap = await getDoc(doc(db, "system_config", "banking"));
+          if (snap.exists()) {
+            return { ...DEFAULT_BANKING_CONFIG, ...(snap.data() as Partial<BankingConfig>) };
+          }
+        } catch {
+          /* fallback */
+        }
+      }
+      try {
+        const raw = localStorage.getItem(BANKING_STORAGE_KEY);
+        if (raw) return { ...DEFAULT_BANKING_CONFIG, ...JSON.parse(raw) };
+      } catch {}
+      return DEFAULT_BANKING_CONFIG;
+    },
+  });
+}
+
+export function useUpdateBankingConfigAdmin() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (config: Partial<BankingConfig>) => {
+      const current = (await qc.getQueryData<BankingConfig>(["banking-config"])) || DEFAULT_BANKING_CONFIG;
+      const updated: BankingConfig = { ...current, ...config };
+
+      try {
+        localStorage.setItem(BANKING_STORAGE_KEY, JSON.stringify(updated));
+      } catch {}
+
+      if (canUseFirestoreWallet()) {
+        try {
+          await setDoc(doc(db, "system_config", "banking"), updated, { merge: true });
+        } catch (err) {
+          console.warn("[banking] setDoc failed", err);
+        }
+      }
+      return updated;
+    },
+    onSuccess: (data) => {
+      qc.setQueryData(["banking-config"], data);
+      qc.invalidateQueries({ queryKey: ["banking-config"] });
+    },
+  });
+}
+
+export function useRequestCustomTopUp() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      amount,
+      paymentMethod,
+      paymentMethodLabel,
+      receiptUrl,
+      reference,
+      note,
+    }: {
+      amount: number;
+      paymentMethod: "nequi" | "mercadopago" | "bancolombia" | "daviplata" | "otro";
+      paymentMethodLabel: string;
+      receiptUrl?: string;
+      reference?: string;
+      note?: string;
+    }) => {
+      const me = currentUserId();
+      if (!me) throw new Error("Debes iniciar sesión para realizar un depósito.");
+      if (!amount || amount < 5000) throw new Error("El monto mínimo de depósito es de $5.000 COP.");
+
+      const extra = loadWalletExtra();
+      const topUp = {
+        id: `dep_${Date.now()}_${rid()}`,
+        userId: me,
+        tokens: amount,
+        packageId: `custom_${amount}`,
+        priceLabel: `$ ${amount.toLocaleString("es-CO")} COP`,
+        paymentMethod,
+        paymentMethodLabel,
+        receiptUrl: receiptUrl || "",
+        reference: reference || "",
+        note: note || "",
+        status: "pending" as const,
+        createdAt: now(),
+      };
+
+      extra.walletTopUps.unshift(topUp);
+      saveWalletExtra({ walletTopUps: extra.walletTopUps });
+
+      if (canUseFirestoreWallet()) {
+        try {
+          await setDoc(doc(db, "walletTopUps", topUp.id), topUp);
+        } catch (err) {
+          console.warn("[walletTopUps] setDoc failed", err);
+        }
+      }
+
+      return topUp;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["wallet"] });
+      qc.invalidateQueries({ queryKey: ["admin-pending-topups"] });
+    },
+  });
+}
+
+export function useTransferFundsToUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      recipientUserId,
+      recipientName,
+      amount,
+      concept,
+    }: {
+      recipientUserId: string;
+      recipientName?: string;
+      amount: number;
+      concept?: string;
+    }) => {
+      const me = currentUserId();
+      if (!me) throw new Error("Debes iniciar sesión para transferir fondos.");
+      if (me === recipientUserId) throw new Error("No puedes transferirte fondos a ti mismo.");
+      if (!amount || amount < 1000) throw new Error("El monto mínimo de transferencia es $1.000 COP.");
+
+      // 1. Validar saldo del remitente
+      const senderBal = await getBalance(me);
+      if (senderBal < amount) {
+        throw new Error(
+          `Saldo insuficiente. Tienes $${senderBal.toLocaleString("es-CO")} COP disponibles y deseas transferir $${amount.toLocaleString("es-CO")} COP.`
+        );
+      }
+
+      // Obtener nombre del remitente
+      let senderName = "Usuario";
+      try {
+        const raw = localStorage.getItem("socialhub_data_v1");
+        if (raw) {
+          const d = JSON.parse(raw);
+          const u = (d.users || []).find((x: any) => x.id === me);
+          if (u) senderName = u.displayName || u.username || senderName;
+        }
+      } catch {}
+
+      // 2. Deducir saldo del remitente
+      const newSenderBal = senderBal - amount;
+      await setBalance(me, newSenderBal);
+      await addTransaction(me, "transfer_sent" as any, -amount, newSenderBal, {
+        recipientId: recipientUserId,
+        recipientName: recipientName || "Usuario Menpoe",
+        concept: concept || "Transferencia directa",
+        description: `Envío a ${recipientName || "usuario"}: -$${amount.toLocaleString("es-CO")} COP`,
+      });
+
+      // 3. Acreditar saldo al destinatario
+      const receiverBal = await getBalance(recipientUserId);
+      const newReceiverBal = receiverBal + amount;
+      await setBalance(recipientUserId, newReceiverBal);
+      await addTransaction(recipientUserId, "transfer_received" as any, amount, newReceiverBal, {
+        senderId: me,
+        senderName,
+        concept: concept || "Transferencia directa",
+        description: `Recibido de ${senderName}: +$${amount.toLocaleString("es-CO")} COP`,
+      });
+
+      // 4. Crear notificación en Firestore para el destinatario
+      if (canUseFirestoreWallet()) {
+        try {
+          const notifId = `notif_tx_${Date.now()}_${rid()}`;
+          await setDoc(doc(db, "notifications", notifId), {
+            id: notifId,
+            userId: recipientUserId,
+            actorId: me,
+            actorName: senderName,
+            type: "transfer_received",
+            title: "¡Transferencia recibida! 💰",
+            body: `${senderName} te ha transferido $${amount.toLocaleString("es-CO")} COP.${concept ? ` Motivo: "${concept}"` : ""}`,
+            read: false,
+            createdAt: now(),
+          });
+        } catch (err) {
+          console.warn("[notifications] transfer notification failed", err);
+        }
+      }
+
+      return {
+        success: true,
+        amount,
+        senderBalance: newSenderBal,
+        recipientUserId,
+        recipientName,
+      };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["wallet"] });
+      qc.invalidateQueries({ queryKey: ["wallet-transactions"] });
+      qc.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+}
+
+export function useSearchUsersForTransfer(searchTerm: string) {
+  return useQuery({
+    queryKey: ["search-users-transfer", searchTerm],
+    enabled: searchTerm.trim().length >= 2,
+    queryFn: async () => {
+      const q = searchTerm.toLowerCase().trim();
+      const me = currentUserId();
+      let users: Array<{
+        id: string;
+        displayName: string;
+        username: string;
+        avatarUrl?: string;
+        email?: string;
+        phone?: string;
+        isVerified?: boolean;
+      }> = [];
+
+      try {
+        const raw = localStorage.getItem("socialhub_data_v1");
+        if (raw) {
+          const d = JSON.parse(raw);
+          users = (d.users || []).map((u: any) => ({
+            id: u.id,
+            displayName: u.displayName || u.name || "Usuario",
+            username: u.username || "user",
+            avatarUrl: u.avatarUrl,
+            email: u.email,
+            phone: u.phone,
+            isVerified: u.isVerified,
+          }));
+        }
+      } catch {}
+
+      if (canUseFirestoreWallet()) {
+        try {
+          const snap = await getDocs(query(collection(db, "users"), limit(60)));
+          if (!snap.empty) {
+            const fsUsers = snap.docs.map((d) => ({
+              id: d.id,
+              ...(d.data() as any),
+            }));
+            const map = new Map<string, any>();
+            [...users, ...fsUsers].forEach((u) => map.set(u.id, u));
+            users = Array.from(map.values());
+          }
+        } catch {}
+      }
+
+      return users.filter((u) => {
+        if (u.id === me) return false;
+        return (
+          (u.displayName || "").toLowerCase().includes(q) ||
+          (u.username || "").toLowerCase().includes(q) ||
+          (u.email || "").toLowerCase().includes(q) ||
+          (u.phone || "").includes(q)
+        );
+      }).slice(0, 10);
+    },
+  });
+}
+
