@@ -26,8 +26,9 @@ import {
   CheckCircle, MapPin, Link as LinkIcon, Edit3, Grid, Heart, MessageCircle,
   FileText, Briefcase, GraduationCap, Globe, Languages, Award, Calendar,
   Phone, X, Plus, Camera, ImageIcon, Star, BookOpen, Bookmark, Image, BarChart3, Sparkles,
-  UserPlus, UserCheck, Clock, Users,
+  UserPlus, UserCheck, Clock, Users, ShieldCheck,
 } from "lucide-react";
+import { EntityVerificationModal } from "@/components/verification/EntityVerificationModal";
 import { ProfilePhotosTab } from "@/components/profile/ProfilePhotosTab";
 import { ProfileAvatarsTab } from "@/components/profile/ProfileAvatarsTab";
 import { ProfileSavedTab } from "@/components/profile/ProfileSavedTab";
@@ -117,6 +118,7 @@ export default function Profile() {
   const [editSkills, setEditSkills] = useState<{ skill: string; level: string }[]>([]);
   const [editExperience, setEditExperience] = useState<any[]>([]);
   const [editEducation, setEditEducation] = useState<any[]>([]);
+  const [showVerifModal, setShowVerifModal] = useState(false);
   const [editLanguages, setEditLanguages] = useState<{ language: string; proficiency: string }[]>([]);
   const [editSocialLinks, setEditSocialLinks] = useState<{ platform: string; url: string }[]>([]);
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -124,12 +126,26 @@ export default function Profile() {
   const avatarRef = useRef<HTMLInputElement>(null);
   const coverRef = useRef<HTMLInputElement>(null);
 
+  const [optimisticFriendStatus, setOptimisticFriendStatus] = useState<string | null>(null);
+  const [optimisticIsFollowing, setOptimisticIsFollowing] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    setOptimisticFriendStatus(null);
+    setOptimisticIsFollowing(null);
+  }, [userId]);
+
   const friendStatus = (profile as any)?.friendStatus || "none";
   const incomingRequestId = (profile as any)?.incomingRequestId;
+  const activeFriendStatus = optimisticFriendStatus ?? friendStatus;
+  const activeIsFollowing = optimisticIsFollowing ?? (profile?.isFollowing ?? false);
+  const realUserId = profile?.id || targetUserId;
 
   const invalidateProfileQueries = () => {
-    qc.invalidateQueries({ queryKey: getGetUserQueryKey(targetUserId) });
-    qc.invalidateQueries({ queryKey: getGetUserQueryKey(userId) });
+    const ids = Array.from(new Set([targetUserId, profile?.id, userId].filter(Boolean)));
+    ids.forEach((id) => {
+      qc.invalidateQueries({ queryKey: getGetUserQueryKey(id as string) });
+      qc.invalidateQueries({ queryKey: getGetUserPostsQueryKey(id as string) });
+    });
     qc.invalidateQueries({ queryKey: ["suggested-users"] });
     qc.invalidateQueries({ queryKey: ["my-friends"] });
     qc.invalidateQueries({ queryKey: ["notifications"] });
@@ -138,30 +154,39 @@ export default function Profile() {
   };
 
   const handleFriendAction = () => {
-    if (!targetUserId || !profile) return;
-    if (friendStatus === "friends") {
+    if (!realUserId || !profile) return;
+    if (activeFriendStatus === "friends") {
+      setOptimisticFriendStatus("none");
       removeFriend.mutate(
-        { userId: targetUserId },
+        { userId: realUserId },
         {
           onSuccess: () => {
             invalidateProfileQueries();
             toast({ title: "Amigo eliminado", description: `Eliminaste a ${profile.displayName} de tus amigos.` });
           },
-          onError: () => toast({ title: "Error", description: "No se pudo eliminar amigo.", variant: "destructive" }),
+          onError: () => {
+            setOptimisticFriendStatus(null);
+            toast({ title: "Error", description: "No se pudo eliminar amigo.", variant: "destructive" });
+          },
         }
       );
-    } else if (friendStatus === "pending_sent") {
+    } else if (activeFriendStatus === "pending_sent") {
+      setOptimisticFriendStatus("none");
       cancelFriendRequest.mutate(
-        { userId: targetUserId },
+        { userId: realUserId },
         {
           onSuccess: () => {
             invalidateProfileQueries();
             toast({ title: "Solicitud cancelada", description: "Cancelaste la solicitud de amistad." });
           },
-          onError: () => toast({ title: "Error", description: "No se pudo cancelar la solicitud.", variant: "destructive" }),
+          onError: () => {
+            setOptimisticFriendStatus(null);
+            toast({ title: "Error", description: "No se pudo cancelar la solicitud.", variant: "destructive" });
+          },
         }
       );
-    } else if (friendStatus === "pending_received" && incomingRequestId) {
+    } else if (activeFriendStatus === "pending_received" && incomingRequestId) {
+      setOptimisticFriendStatus("friends");
       acceptFriendRequest.mutate(
         { requestId: incomingRequestId },
         {
@@ -169,18 +194,25 @@ export default function Profile() {
             invalidateProfileQueries();
             toast({ title: "Solicitud aceptada", description: `¡Ahora tú y ${profile.displayName} son amigos!` });
           },
-          onError: () => toast({ title: "Error", description: "No se pudo aceptar la solicitud.", variant: "destructive" }),
+          onError: () => {
+            setOptimisticFriendStatus(null);
+            toast({ title: "Error", description: "No se pudo aceptar la solicitud.", variant: "destructive" });
+          },
         }
       );
     } else {
+      setOptimisticFriendStatus("pending_sent");
       sendFriendRequest.mutate(
-        { userId: targetUserId },
+        { userId: realUserId },
         {
           onSuccess: () => {
             invalidateProfileQueries();
             toast({ title: "Solicitud de amistad enviada", description: `Le enviaste una solicitud a ${profile.displayName}.` });
           },
-          onError: () => toast({ title: "Error", description: "No se pudo enviar la solicitud de amistad.", variant: "destructive" }),
+          onError: () => {
+            setOptimisticFriendStatus(null);
+            toast({ title: "Error", description: "No se pudo enviar la solicitud de amistad.", variant: "destructive" });
+          },
         }
       );
     }
@@ -205,11 +237,37 @@ export default function Profile() {
   const createConv = useStartConversationWithUser();
 
   const handleFollow = () => {
-    if (!profile || !targetUserId) return;
-    if (profile.isFollowing) {
-      unfollowUser.mutate({ userId: targetUserId }, { onSuccess: () => invalidateProfileQueries() });
+    if (!profile || !realUserId) return;
+    if (activeIsFollowing) {
+      setOptimisticIsFollowing(false);
+      unfollowUser.mutate(
+        { userId: realUserId },
+        {
+          onSuccess: () => {
+            invalidateProfileQueries();
+            toast({ title: "Dejaste de seguir", description: `Ya no sigues a ${profile.displayName}.` });
+          },
+          onError: () => {
+            setOptimisticIsFollowing(null);
+            toast({ title: "Error", description: "No se pudo dejar de seguir.", variant: "destructive" });
+          },
+        }
+      );
     } else {
-      followUser.mutate({ userId: targetUserId }, { onSuccess: () => invalidateProfileQueries() });
+      setOptimisticIsFollowing(true);
+      followUser.mutate(
+        { userId: realUserId },
+        {
+          onSuccess: () => {
+            invalidateProfileQueries();
+            toast({ title: "✓ Siguiendo", description: `Ahora sigues a ${profile.displayName}.` });
+          },
+          onError: () => {
+            setOptimisticIsFollowing(null);
+            toast({ title: "Error", description: "No se pudo seguir.", variant: "destructive" });
+          },
+        }
+      );
     }
   };
 
@@ -356,10 +414,21 @@ export default function Profile() {
             </>
           )}
           {isOwnProfile && !editMode && (
-            <button onClick={openEdit}
-              className="absolute top-4 right-4 flex items-center gap-2 px-4 py-2 rounded-full bg-black/40 backdrop-blur text-white text-sm hover:bg-black/60 transition-colors" data-testid="button-edit-profile">
-              <Edit3 className="w-4 h-4" />Editar perfil
-            </button>
+            <div className="absolute top-4 right-4 flex items-center gap-2">
+              {!displayProfile.isVerified && (
+                <button
+                  type="button"
+                  onClick={() => setShowVerifModal(true)}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-cyan-500/25 border border-cyan-400/50 backdrop-blur text-cyan-300 text-xs font-bold hover:bg-cyan-500/40 transition-all shadow-[0_0_12px_rgba(6,182,212,0.4)]"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" /> Solicitar Verificación
+                </button>
+              )}
+              <button onClick={openEdit}
+                className="flex items-center gap-2 px-4 py-2 rounded-full bg-black/40 backdrop-blur text-white text-sm hover:bg-black/60 transition-colors" data-testid="button-edit-profile">
+                <Edit3 className="w-4 h-4" />Editar perfil
+              </button>
+            </div>
           )}
         </div>
 
@@ -403,41 +472,43 @@ export default function Profile() {
                   size="sm"
                   onClick={handleFollow}
                   disabled={followUser.isPending || unfollowUser.isPending}
-                  variant={displayProfile.isFollowing ? "outline" : "default"}
-                  className="rounded-xl font-bold gap-1.5"
+                  variant={activeIsFollowing ? "outline" : "default"}
+                  className={`rounded-xl font-bold gap-1.5 ${
+                    activeIsFollowing ? "border-cyan-500/50 text-cyan-400" : "bg-primary text-primary-foreground"
+                  }`}
                   data-testid="button-follow-profile"
                 >
-                  <UserPlus className="w-4 h-4" />
-                  {displayProfile.isFollowing ? "Siguiendo" : "Seguir"}
+                  {activeIsFollowing ? <CheckCircle className="w-4 h-4 text-cyan-400" /> : <UserPlus className="w-4 h-4" />}
+                  {activeIsFollowing ? "✓ Siguiendo" : "Seguir"}
                 </Button>
 
                 <Button
                   size="sm"
                   onClick={handleFriendAction}
                   disabled={sendFriendRequest.isPending || acceptFriendRequest.isPending || cancelFriendRequest.isPending || removeFriend.isPending}
-                  variant={friendStatus === "friends" ? "outline" : friendStatus === "pending_received" ? "default" : "outline"}
+                  variant={activeFriendStatus === "friends" ? "outline" : activeFriendStatus === "pending_received" ? "default" : "outline"}
                   className={`rounded-xl font-bold gap-1.5 ${
-                    friendStatus === "friends"
+                    activeFriendStatus === "friends"
                       ? "border-emerald-500/50 text-emerald-400"
-                      : friendStatus === "pending_sent"
-                        ? "border-amber-500/50 text-amber-400"
-                        : friendStatus === "pending_received"
+                      : activeFriendStatus === "pending_sent"
+                        ? "border-amber-500/50 text-amber-400 bg-amber-500/10"
+                        : activeFriendStatus === "pending_received"
                           ? "bg-emerald-600 hover:bg-emerald-700 text-white"
                           : ""
                   }`}
                   data-testid="button-friend-profile"
                 >
-                  {friendStatus === "friends" ? (
+                  {activeFriendStatus === "friends" ? (
                     <>
                       <CheckCircle className="w-4 h-4 text-emerald-400" />
                       Amigos
                     </>
-                  ) : friendStatus === "pending_sent" ? (
+                  ) : activeFriendStatus === "pending_sent" ? (
                     <>
                       <Clock className="w-4 h-4 text-amber-400" />
                       Solicitud enviada
                     </>
-                  ) : friendStatus === "pending_received" ? (
+                  ) : activeFriendStatus === "pending_received" ? (
                     <>
                       <UserCheck className="w-4 h-4" />
                       Aceptar solicitud
@@ -742,7 +813,7 @@ export default function Profile() {
                 <>
                   <TabsTrigger value="avatars" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary px-3 sm:px-4 py-3 text-sm shrink-0"><Sparkles className="w-4 h-4 mr-1.5" />Avatares</TabsTrigger>
                   <TabsTrigger value="photos" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary px-3 sm:px-4 py-3 text-sm shrink-0"><Image className="w-4 h-4 mr-1.5" />Fotos</TabsTrigger>
-                  <TabsTrigger value="saved" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary px-3 sm:px-4 py-3 text-sm shrink-0"><Bookmark className="w-4 h-4 mr-1.5" />Guardados</TabsTrigger>
+                  <TabsTrigger value="saved" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary px-3 sm:px-4 py-3 text-sm shrink-0"><Star className="w-4 h-4 mr-1.5 text-amber-400 fill-amber-400/20" />Favoritos</TabsTrigger>
                   <TabsTrigger value="stats" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary px-3 sm:px-4 py-3 text-sm shrink-0"><BarChart3 className="w-4 h-4 mr-1.5" />Estadísticas</TabsTrigger>
                 </>
               )}
@@ -786,6 +857,20 @@ export default function Profile() {
           </Tabs>
         </div>
       </div>
+
+      {isOwnProfile && (
+        <EntityVerificationModal
+          open={showVerifModal}
+          onOpenChange={setShowVerifModal}
+          entityType="profile"
+          entityId={displayProfile.id}
+          entityName={displayProfile.displayName || "Perfil Personal"}
+          userId={displayProfile.id}
+          userName={displayProfile.displayName || "Usuario"}
+          userAvatar={displayProfile.avatarUrl}
+          isAlreadyVerified={displayProfile.isVerified}
+        />
+      )}
     </Shell>
   );
 }

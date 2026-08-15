@@ -18,10 +18,13 @@ import { getPageTypeLabel } from "@/lib/page-types";
 import { InviteToGroupModal } from "@/components/InviteToGroupModal";
 import { SharePostDialog } from "@/components/SharePostDialog";
 import { CreatePostBox } from "@/components/feed/CreatePostBox";
+import { CTAButton } from "@/components/CTAButton";
+import { EntityVerificationModal } from "@/components/verification/EntityVerificationModal";
+import { EntityVerificationAdminModal } from "@/components/verification/EntityVerificationAdminModal";
 import {
   ArrowLeft, Camera, Settings, X, Plus, ImageIcon, Save, Shield,
   Trash2, Globe, Lock, Users, Building2, Briefcase, UserPlus,
-  Heart, MessageCircle, Share2, Edit3, Bell,
+  Heart, MessageCircle, Share2, Edit3, Bell, ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,6 +69,11 @@ export default function BusinessPageDetail() {
   const [showInvite, setShowInvite] = useState(false);
   const [sharePost, setSharePost] = useState<any>(null);
   const [openCommentsId, setOpenCommentsId] = useState<string | null>(null);
+
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [showVerifyAdminModal, setShowVerifyAdminModal] = useState(false);
+  const verifiedUserIds: string[] = (p?.verifiedUserIds as string[]) || [];
+  const isVerifiedUser = verifiedUserIds.includes(meId);
 
   // Settings form
   const [editName, setEditName] = useState("");
@@ -226,6 +234,8 @@ export default function BusinessPageDetail() {
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
+              <CTAButton title={p.name} description={p.description || p.category} />
+
               {/* Jobs button */}
               <Link href="/jobs">
                 <Button size="sm" variant="outline" className="rounded-xl gap-1.5 border-amber-500/30 text-amber-400 hover:border-amber-500 text-xs">
@@ -237,6 +247,27 @@ export default function BusinessPageDetail() {
               <Button size="sm" variant="outline" className="rounded-xl gap-1.5 border-violet-500/30 text-violet-400 hover:border-violet-500 text-xs" onClick={() => setShowInvite(true)}>
                 <UserPlus className="w-3.5 h-3.5" /> Invitar
               </Button>
+
+              {/* Verification button */}
+              {canManage ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="rounded-xl gap-1.5 border-cyan-500/30 text-cyan-400 hover:border-cyan-500 text-xs font-semibold"
+                  onClick={() => setShowVerifyAdminModal(true)}
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" /> Verificaciones
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="rounded-xl gap-1.5 border-cyan-500/30 text-cyan-400 hover:border-cyan-500 text-xs font-semibold"
+                  onClick={() => setShowVerifyModal(true)}
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" /> {isVerifiedUser ? "✓ Verificado" : "Verificación"}
+                </Button>
+              )}
 
               {/* Settings (creators & admins) */}
               {canManage && (
@@ -453,6 +484,28 @@ export default function BusinessPageDetail() {
         {sharePost && (
           <SharePostDialog open={!!sharePost} onOpenChange={(o) => { if (!o) setSharePost(null); }} post={sharePost} />
         )}
+
+        {/* Verification user modal */}
+        <EntityVerificationModal
+          open={showVerifyModal}
+          onOpenChange={setShowVerifyModal}
+          entityType="page"
+          entityId={id}
+          entityName={p.name}
+          userId={meId}
+          userName={(me as any)?.displayName || "Usuario"}
+          userAvatar={(me as any)?.avatarUrl}
+          isAlreadyVerified={isVerifiedUser}
+        />
+
+        {/* Verification admin modal */}
+        <EntityVerificationAdminModal
+          open={showVerifyAdminModal}
+          onOpenChange={setShowVerifyAdminModal}
+          entityType="page"
+          entityId={id}
+          entityName={p.name}
+        />
       </div>
     </Shell>
   );

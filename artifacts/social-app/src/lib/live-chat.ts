@@ -14,6 +14,7 @@ export type LiveChatMessage = {
   streamId: string;
   userId: string;
   displayName: string;
+  userAvatar?: string;
   text: string;
   at: string;
 };
@@ -33,7 +34,6 @@ function writeLocal(streamId: string, list: LiveChatMessage[]) {
   localStorage.setItem(localKey(streamId), JSON.stringify(list.slice(-200)));
 }
 
-/** Chat en vivo: Firestore en tiempo real; respaldo localStorage. */
 export function readLiveChat(streamId: string): LiveChatMessage[] {
   return readLocal(streamId);
 }
@@ -54,6 +54,7 @@ export async function sendLiveChat(msg: Omit<LiveChatMessage, "id" | "at">) {
       await addDoc(collection(db, "streams", msg.streamId, "chat"), {
         userId: msg.userId,
         displayName: msg.displayName,
+        userAvatar: msg.userAvatar || auth.currentUser.photoURL || null,
         text: msg.text,
         at: payload.at,
         createdAt: serverTimestamp(),
@@ -83,6 +84,7 @@ export function subscribeLiveChat(streamId: string, cb: (msgs: LiveChatMessage[]
             streamId,
             userId: data.userId,
             displayName: data.displayName,
+            userAvatar: data.userAvatar,
             text: data.text,
             at: data.at || new Date().toISOString(),
           };
@@ -91,7 +93,6 @@ export function subscribeLiveChat(streamId: string, cb: (msgs: LiveChatMessage[]
         cb(msgs);
       },
       () => {
-        /* índice / perms: polling local */
         const poll = window.setInterval(() => cb(readLocal(streamId)), 1200);
         (unsub as unknown as { _poll?: number })._poll = poll;
       },

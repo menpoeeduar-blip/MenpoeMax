@@ -783,9 +783,17 @@ export function useGetFeed(_params?: AnyObj, opts?: AnyObj) {
         followSnap.forEach((f) => followingIds.add(f.data().followingId));
 
         const posts = rawItems.map((item) => {
-          const author = usersMap.get(item.authorId) || d.users.find((u) => u.id === item.authorId) || me;
+          const rawAuthor = usersMap.get(item.authorId) || d.users.find((u) => u.id === item.authorId) || me;
           const commentsCount = item.commentsCount || 0;
           const userReaction = reactionsByPost.get(item.id) ?? null;
+
+          const author = (item.entityName || item.authorType) ? {
+            ...rawAuthor,
+            id: rawAuthor?.id || item.authorId,
+            displayName: item.entityName || rawAuthor?.displayName,
+            avatarUrl: item.entityAvatar || rawAuthor?.avatarUrl,
+          } : rawAuthor;
+
           return {
             ...item,
             commentsCount,
@@ -833,6 +841,49 @@ export function useCreatePost() {
       const d = load();
       if (canUseFirestoreSocial()) {
         const me = await ensureCurrentUserInFirestore(d);
+
+        let entityName: string | undefined;
+        let entityAvatar: string | undefined;
+        let authorType: string | undefined;
+
+        if (data.pageId) {
+          try {
+            const snap = await getDoc(doc(db, "pages", data.pageId));
+            if (snap.exists()) {
+              const pData = snap.data() as AnyObj;
+              if (pData.creatorId === me.id || pData.ownerId === me.id || pData.admins?.includes(me.id)) {
+                authorType = "page";
+                entityName = pData.name;
+                entityAvatar = pData.avatarUrl || pData.logoUrl || pData.coverUrl;
+              }
+            }
+          } catch {}
+        } else if (data.groupId) {
+          try {
+            const snap = await getDoc(doc(db, "groups", data.groupId));
+            if (snap.exists()) {
+              const gData = snap.data() as AnyObj;
+              if (gData.creatorId === me.id || gData.ownerId === me.id || gData.admins?.includes(me.id)) {
+                authorType = "group";
+                entityName = gData.name;
+                entityAvatar = gData.coverUrl || gData.avatarUrl;
+              }
+            }
+          } catch {}
+        } else if (data.communityId) {
+          try {
+            const snap = await getDoc(doc(db, "communities", data.communityId));
+            if (snap.exists()) {
+              const cData = snap.data() as AnyObj;
+              if (cData.creatorId === me.id || cData.ownerId === me.id || cData.admins?.includes(me.id)) {
+                authorType = "community";
+                entityName = cData.name;
+                entityAvatar = cData.coverUrl || cData.avatarUrl;
+              }
+            }
+          } catch {}
+        }
+
         const created = {
           id: rid(),
           authorId: me.id,
@@ -848,24 +899,68 @@ export function useCreatePost() {
           createdAt: now(),
           updatedAt: now(),
           ...(data.poll ? { poll: data.poll } : {}),
+          ...(data.adData ? { adData: data.adData } : {}),
+          ...(data.pageId ? { pageId: data.pageId } : {}),
+          ...(data.groupId ? { groupId: data.groupId } : {}),
+          ...(data.communityId ? { communityId: data.communityId } : {}),
+          ...(authorType ? { authorType, entityName, entityAvatar } : {}),
         };
         await setDoc(doc(db, "posts", created.id), created);
         await updateDoc(doc(db, "users", me.id), { postsCount: increment(1), updatedAt: now() });
         return created;
       }
       const me = ensureCurrentUser(d);
-      const p = { id: rid(), authorId: me.id, content: data.content, postType: data.postType || "text", mediaUrls: data.mediaUrls || [], hashtags: data.hashtags || [], visibility: data.visibility || "publico", location: data.location || null, likesCount: 0, sharesCount: 0, viewsCount: 0, createdAt: now(), ...(data.poll ? { poll: data.poll } : {}) };
-        save(d);
-        return p;
-      },
-      onSuccess: () => {
-        qc.invalidateQueries({ queryKey: ["feed"] });
-        qc.invalidateQueries({ queryKey: ["user-posts"] });
-        qc.invalidateQueries({ queryKey: ["trending-posts"] });
-        qc.invalidateQueries();
-      },
-    });
-  }
+      let entityName: string | undefined;
+      let entityAvatar: string | undefined;
+      let authorType: string | undefined;
+      if (data.pageId) {
+        const page = d.pages?.find((x: AnyObj) => x.id === data.pageId);
+        if (page && (page.creatorId === me.id || page.ownerId === me.id)) {
+          authorType = "page"; entityName = page.name; entityAvatar = page.avatarUrl || page.coverUrl;
+        }
+      } else if (data.groupId) {
+        const group = d.groups?.find((x: AnyObj) => x.id === data.groupId);
+        if (group && (group.creatorId === me.id || group.ownerId === me.id)) {
+          authorType = "group"; entityName = group.name; entityAvatar = group.coverUrl || group.avatarUrl;
+        }
+      } else if (data.communityId) {
+        const comm = d.communities?.find((x: AnyObj) => x.id === data.communityId);
+        if (comm && (comm.creatorId === me.id || comm.ownerId === me.id)) {
+          authorType = "community"; entityName = comm.name; entityAvatar = comm.coverUrl || comm.avatarUrl;
+        }
+      }
+      const p = {
+        id: rid(),
+        authorId: me.id,
+        content: data.content,
+        postType: data.postType || "text",
+        mediaUrls: data.mediaUrls || [],
+        hashtags: data.hashtags || [],
+        visibility: data.visibility || "publico",
+        location: data.location || null,
+        likesCount: 0,
+        sharesCount: 0,
+        viewsCount: 0,
+        createdAt: now(),
+        ...(data.poll ? { poll: data.poll } : {}),
+        ...(data.adData ? { adData: data.adData } : {}),
+        ...(data.pageId ? { pageId: data.pageId } : {}),
+        ...(data.groupId ? { groupId: data.groupId } : {}),
+        ...(data.communityId ? { communityId: data.communityId } : {}),
+        ...(authorType ? { authorType, entityName, entityAvatar } : {}),
+      };
+      d.posts.unshift(p as any);
+      save(d);
+      return p;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["feed"] });
+      qc.invalidateQueries({ queryKey: ["user-posts"] });
+      qc.invalidateQueries({ queryKey: ["trending-posts"] });
+      qc.invalidateQueries();
+    },
+  });
+}
 export function useLikePost() {
   const qc = useQueryClient();
   return useMutation({
@@ -939,6 +1034,57 @@ export function useSavePost() {
     },
   });
 }
+
+export function useDeletePost() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ postId }: { postId: string }) => {
+      const d = load();
+      if (canUseFirestoreSocial()) {
+        await deleteDoc(doc(db, "posts", postId));
+      }
+      d.posts = d.posts.filter((p: AnyObj) => p.id !== postId);
+      save(d);
+      return { ok: true };
+    },
+    onSuccess: () => qc.invalidateQueries(),
+  });
+}
+
+export function useUpdatePost() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ postId, data }: { postId: string; data: AnyObj }) => {
+      const d = load();
+      if (canUseFirestoreSocial()) {
+        await updateDoc(doc(db, "posts", postId), { ...data, updatedAt: now() });
+      }
+      const p = d.posts.find((x: AnyObj) => x.id === postId);
+      if (p) Object.assign(p, data, { updatedAt: now() });
+      save(d);
+      return { ok: true };
+    },
+    onSuccess: () => qc.invalidateQueries(),
+  });
+}
+
+export function usePinPost() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ postId, pinned }: { postId: string; pinned: boolean }) => {
+      const d = load();
+      if (canUseFirestoreSocial()) {
+        await updateDoc(doc(db, "posts", postId), { isPinned: pinned, updatedAt: now() });
+      }
+      const p = d.posts.find((x: AnyObj) => x.id === postId);
+      if (p) { p.isPinned = pinned; p.updatedAt = now(); }
+      save(d);
+      return { ok: true };
+    },
+    onSuccess: () => qc.invalidateQueries(),
+  });
+}
+
 
 export function useGetAllSaved(opts?: AnyObj) {
   return useQuery({
@@ -2019,7 +2165,28 @@ export function useGetListings(params?: AnyObj) {
       const d = load();
       const mine = params?.mine === true || params?.mine === "true";
       const meId = currentUserId();
-      return d.listings.filter((l) => {
+      let list: AnyObj[] = [];
+
+      if (canUseFirestoreSocial()) {
+        try {
+          const snap = await getDocs(query(collection(db, "listings")));
+          const fsListings = snap.docs.map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() as AnyObj) }));
+          const byId = new Map<string, AnyObj>();
+          fsListings.forEach((x) => byId.set(x.id, x));
+          (d.listings || []).forEach((x) => {
+            if (!byId.has(x.id)) byId.set(x.id, x);
+          });
+          list = Array.from(byId.values());
+        } catch {
+          list = d.listings || [];
+        }
+      } else {
+        list = d.listings || [];
+      }
+
+      list.sort((a, b) => (String(a.createdAt || "") < String(b.createdAt || "") ? 1 : -1));
+
+      return list.filter((l) => {
         if (mine && l.sellerId !== meId) return false;
         if (params?.availableOnly && l.isAvailable === false) return false;
         if (params?.q && !l.title.toLowerCase().includes(String(params.q).toLowerCase())) return false;
@@ -2037,7 +2204,9 @@ export function useCreateListing() {
   return useMutation({
     mutationFn: async ({ data }: AnyObj) => {
       const d = load();
-      const me = ensureCurrentUser(d);
+      const me = canUseFirestoreSocial()
+        ? await ensureCurrentUserInFirestore(d)
+        : ensureCurrentUser(d);
       const l = {
         id: rid(),
         ...data,
@@ -2047,12 +2216,26 @@ export function useCreateListing() {
         isAvailable: true,
         viewsCount: 0,
         createdAt: now(),
+        updatedAt: now(),
       };
-      d.listings.unshift(l);
+
+      if (canUseFirestoreSocial()) {
+        try {
+          await setDoc(doc(db, "listings", l.id), l);
+        } catch (err) {
+          console.warn("[marketplace] setDoc failed", err);
+        }
+      }
+
+      d.listings = d.listings || [];
+      d.listings.unshift(l as any);
       save(d);
       return l;
     },
-    onSuccess: () => qc.invalidateQueries(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["listings"] });
+      qc.invalidateQueries();
+    },
   });
 }
 export function useUpdateListing() {
@@ -2060,14 +2243,29 @@ export function useUpdateListing() {
   return useMutation({
     mutationFn: async ({ listingId, data }: AnyObj) => {
       const d = load();
-      const l = d.listings.find((x) => x.id === listingId);
-      if (!l) throw new Error("Anuncio no encontrado");
-      if (l.sellerId !== currentUserId()) throw new Error("No tienes permiso para editar este anuncio");
-      Object.assign(l, data);
-      save(d);
-      return l;
+      const l = d.listings?.find((x) => x.id === listingId);
+      const patch = { ...data, updatedAt: now() };
+
+      if (l) {
+        Object.assign(l, patch);
+        save(d);
+      }
+
+      if (canUseFirestoreSocial()) {
+        try {
+          await updateDoc(doc(db, "listings", listingId), patch);
+        } catch (err) {
+          console.warn("[marketplace] updateDoc failed", err);
+        }
+      }
+
+      return { id: listingId, ...patch };
     },
-    onSuccess: () => qc.invalidateQueries(),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ["listings"] });
+      qc.invalidateQueries({ queryKey: getGetListingQueryKey(vars.listingId) });
+      qc.invalidateQueries();
+    },
   });
 }
 export function useDeleteListing() {
@@ -2075,14 +2273,23 @@ export function useDeleteListing() {
   return useMutation({
     mutationFn: async ({ listingId }: AnyObj) => {
       const d = load();
-      const l = d.listings.find((x) => x.id === listingId);
-      if (!l) throw new Error("Anuncio no encontrado");
-      if (l.sellerId !== currentUserId()) throw new Error("No tienes permiso para eliminar este anuncio");
-      d.listings = d.listings.filter((x) => x.id !== listingId);
+      d.listings = (d.listings || []).filter((x) => x.id !== listingId);
       save(d);
+
+      if (canUseFirestoreSocial()) {
+        try {
+          await deleteDoc(doc(db, "listings", listingId));
+        } catch (err) {
+          console.warn("[marketplace] deleteDoc failed", err);
+        }
+      }
+
       return { deleted: true };
     },
-    onSuccess: () => qc.invalidateQueries(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["listings"] });
+      qc.invalidateQueries();
+    },
   });
 }
 export function useRecordListingView() {
@@ -2090,10 +2297,17 @@ export function useRecordListingView() {
   return useMutation({
     mutationFn: async ({ listingId }: AnyObj) => {
       const d = load();
-      const l = d.listings.find((x) => x.id === listingId);
-      if (l) l.viewsCount = (l.viewsCount || 0) + 1;
+      const l = d.listings?.find((x) => x.id === listingId);
+      let count = (l?.viewsCount || 0) + 1;
+      if (l) l.viewsCount = count;
       save(d);
-      return { viewsCount: l?.viewsCount ?? 0 };
+
+      if (canUseFirestoreSocial()) {
+        try {
+          await updateDoc(doc(db, "listings", listingId), { viewsCount: increment(1) });
+        } catch {}
+      }
+      return { viewsCount: count };
     },
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: getGetListingQueryKey(vars.listingId) });
@@ -2163,7 +2377,23 @@ export function useStartConversationWithUser() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["conversations"] }),
   });
 }
-export function useGetListing(id: string, opts?: AnyObj) { return useQuery({ queryKey: getGetListingQueryKey(id), enabled: opts?.query?.enabled ?? true, queryFn: async () => load().listings.find((l) => l.id === id) }); }
+export function useGetListing(id: string, opts?: AnyObj) {
+  return useQuery({
+    queryKey: getGetListingQueryKey(id),
+    enabled: opts?.query?.enabled ?? true,
+    queryFn: async () => {
+      if (canUseFirestoreSocial()) {
+        try {
+          const snap = await getDoc(doc(db, "listings", id));
+          if (snap.exists()) {
+            return { id: snap.id, ...(snap.data() as AnyObj) };
+          }
+        } catch {}
+      }
+      return load().listings.find((l) => l.id === id);
+    },
+  });
+}
 export function useGetMarketplaceCategories() {
   return useQuery({
     queryKey: ["marketplace-categories"],
@@ -2417,9 +2647,13 @@ export function useCreateEvent() {
       const e = {
         id: rid(),
         ...data,
+        price: Number(data.price || 0),
+        priceLabel: Number(data.price || 0) > 0 ? `$ ${Number(data.price).toLocaleString("es-CO")} COP` : "Gratis",
         organizerId: me.id,
         attendeesCount: 0,
+        interestedCount: 0,
         createdAt: now(),
+        updatedAt: now(),
       };
       if (canUseFirestoreSocial()) {
         await setDoc(doc(db, "events", e.id), e);
@@ -2428,9 +2662,13 @@ export function useCreateEvent() {
       save(d);
       return e;
     },
-    onSuccess: () => qc.invalidateQueries(),
+    onSuccess: () => {
+      qc.invalidateQueries();
+      qc.invalidateQueries({ queryKey: ["events"] });
+    },
   });
 }
+
 export function useGetEvent(id: string, opts?: AnyObj) {
   return useQuery({
     queryKey: getGetEventQueryKey(id),
@@ -2453,37 +2691,380 @@ export function useGetEvent(id: string, opts?: AnyObj) {
           : null) ||
         { id: event.organizerId, displayName: "Organizador", avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${event.organizerId}` };
 
-      const isAttending = d.eventAttendees.some((x) => x.eventId === id && x.userId === meId);
-      return { ...event, organizer, isAttending };
+      let rsvpStatus: "going" | "not_going" | "maybe" | null = null;
+      const attendeesList: AnyObj[] = [];
+
+      if (canUseFirestoreSocial()) {
+        try {
+          const attendeeDoc = await getDoc(doc(db, "eventAttendees", `${id}_${meId}`));
+          if (attendeeDoc.exists()) {
+            rsvpStatus = attendeeDoc.data()?.status || "going";
+          }
+          const allAttendeesSnap = await getDocs(query(collection(db, "eventAttendees"), where("eventId", "==", id)));
+          const uids = allAttendeesSnap.docs.map((docSnap) => (docSnap.data() as AnyObj).userId);
+          const usersMap = await getCachedUsersMap(uids, d);
+          allAttendeesSnap.docs.forEach((docSnap) => {
+            const row = docSnap.data() as AnyObj;
+            const u = usersMap.get(row.userId) || { id: row.userId, displayName: "Asistente" };
+            attendeesList.push({ ...row, user: u });
+          });
+        } catch {
+          /* ignore */
+        }
+      }
+
+      if (!rsvpStatus) {
+        const localAtt = d.eventAttendees.find((x) => x.eventId === id && x.userId === meId);
+        if (localAtt) rsvpStatus = localAtt.status || "going";
+      }
+
+      const isAttending = rsvpStatus === "going";
+      const goingAttendees = attendeesList.filter((a) => a.status === "going" || !a.status);
+      const maybeAttendees = attendeesList.filter((a) => a.status === "maybe");
+
+      return {
+        ...event,
+        price: Number(event.price || 0),
+        priceLabel: event.priceLabel || (Number(event.price || 0) > 0 ? `$ ${Number(event.price).toLocaleString("es-CO")} COP` : "Gratis"),
+        organizer,
+        isAttending,
+        rsvpStatus,
+        attendeesCount: event.attendeesCount ?? goingAttendees.length,
+        interestedCount: event.interestedCount ?? maybeAttendees.length,
+        attendeesList: goingAttendees,
+        interestedList: maybeAttendees,
+      };
     },
   });
 }
-export function useAttendEvent() {
+
+export function useRespondEventRsvp() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ eventId }: AnyObj) => {
+    mutationFn: async ({ eventId, status }: { eventId: string; status: "going" | "not_going" | "maybe" }) => {
       const d = load();
       const me = canUseFirestoreSocial() ? await ensureCurrentUserInFirestore(d) : ensureCurrentUser(d);
       const meId = me.id;
-      if (!d.eventAttendees.some((x) => x.eventId === eventId && x.userId === meId)) {
-        d.eventAttendees.push({ eventId, userId: meId });
+
+      // Update local storage
+      const existingIdx = d.eventAttendees.findIndex((x) => x.eventId === eventId && x.userId === meId);
+      if (status === "not_going") {
+        if (existingIdx >= 0) d.eventAttendees.splice(existingIdx, 1);
+      } else {
+        if (existingIdx >= 0) {
+          d.eventAttendees[existingIdx].status = status;
+          d.eventAttendees[existingIdx].updatedAt = now();
+        } else {
+          d.eventAttendees.push({ eventId, userId: meId, status, createdAt: now() });
+        }
       }
-      const e = d.events.find((x) => x.id === eventId);
-      if (e) e.attendeesCount = d.eventAttendees.filter((x) => x.eventId === eventId).length;
+
+      const ev = d.events.find((x) => x.id === eventId);
+      if (ev) {
+        ev.attendeesCount = d.eventAttendees.filter((x) => x.eventId === eventId && (x.status === "going" || !x.status)).length;
+        ev.interestedCount = d.eventAttendees.filter((x) => x.eventId === eventId && x.status === "maybe").length;
+      }
       save(d);
+
       if (canUseFirestoreSocial()) {
-        await setDoc(doc(db, "eventAttendees", `${eventId}_${meId}`), {
-          eventId,
-          userId: meId,
-          createdAt: now(),
-        });
-        const ref = doc(db, "events", eventId);
-        const snap = await getDoc(ref);
-        if (snap.exists()) await updateDoc(ref, { attendeesCount: increment(1) });
+        const attendeeRef = doc(db, "eventAttendees", `${eventId}_${meId}`);
+        const eventRef = doc(db, "events", eventId);
+
+        if (status === "not_going") {
+          await deleteDoc(attendeeRef);
+        } else {
+          await setDoc(attendeeRef, {
+            eventId,
+            userId: meId,
+            status,
+            createdAt: now(),
+            updatedAt: now(),
+          }, { merge: true });
+        }
+
+        // Recalculate counts in Firestore
+        try {
+          const allAtt = await getDocs(query(collection(db, "eventAttendees"), where("eventId", "==", eventId)));
+          const goingCount = allAtt.docs.filter((d) => (d.data() as AnyObj).status === "going" || !(d.data() as AnyObj).status).length;
+          const maybeCount = allAtt.docs.filter((d) => (d.data() as AnyObj).status === "maybe").length;
+          await updateDoc(eventRef, {
+            attendeesCount: goingCount,
+            interestedCount: maybeCount,
+            updatedAt: now(),
+          });
+        } catch {
+          /* ignore */
+        }
       }
-      return { success: true, message: "Asistencia confirmada" };
+
+      return { success: true, status, eventId };
     },
-    onSuccess: () => qc.invalidateQueries(),
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ["events"] });
+      qc.invalidateQueries({ queryKey: ["event", vars.eventId] });
+      qc.invalidateQueries();
+    },
+  });
+}
+
+export function useAttendEvent() {
+  const rsvp = useRespondEventRsvp();
+  return useMutation({
+    mutationFn: async ({ eventId }: AnyObj) => {
+      return rsvp.mutateAsync({ eventId, status: "going" });
+    },
+  });
+}
+
+/** Hook for fetching event news / updates created by the event organizer */
+export function useGetEventUpdates(eventId?: string) {
+  return useQuery({
+    queryKey: ["event-updates", eventId],
+    enabled: !!eventId,
+    queryFn: async () => {
+      if (!eventId) return [];
+      const d = load();
+
+      if (canUseFirestoreSocial()) {
+        try {
+          const snap = await getDocs(
+            query(collection(db, "eventUpdates"), where("eventId", "==", eventId))
+          );
+          if (!snap.empty) {
+            const list: AnyObj[] = [];
+            const authorIds = snap.docs.map((docSnap) => (docSnap.data() as AnyObj).authorId);
+            const usersMap = await getCachedUsersMap(authorIds, d);
+            snap.docs.forEach((docSnap) => {
+              const data = docSnap.data() as AnyObj;
+              list.push({
+                id: docSnap.id,
+                ...data,
+                author: usersMap.get(data.authorId) || { id: data.authorId, displayName: "Organizador" },
+              });
+            });
+            return list.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+          }
+        } catch {
+          /* fallback to local */
+        }
+      }
+
+      try {
+        const raw = localStorage.getItem("menpoe_event_updates_v1");
+        const all = raw ? JSON.parse(raw) : [];
+        return all
+          .filter((u: AnyObj) => u.eventId === eventId)
+          .sort((a: AnyObj, b: AnyObj) => (a.createdAt < b.createdAt ? 1 : -1));
+      } catch {
+        return [];
+      }
+    },
+  });
+}
+
+/** Hook for publishing an event announcement (Organizer only) */
+export function useCreateEventUpdate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      eventId,
+      title,
+      content,
+      mediaUrl,
+    }: {
+      eventId: string;
+      title?: string;
+      content: string;
+      mediaUrl?: string;
+    }) => {
+      const d = load();
+      const me = canUseFirestoreSocial()
+        ? await ensureCurrentUserInFirestore(d)
+        : ensureCurrentUser(d);
+
+      const updateItem = {
+        id: `update_${Date.now()}_${rid()}`,
+        eventId,
+        authorId: me.id,
+        title: title || "Aviso Importante",
+        content,
+        mediaUrl: mediaUrl || null,
+        createdAt: now(),
+      };
+
+      if (canUseFirestoreSocial()) {
+        await setDoc(doc(db, "eventUpdates", updateItem.id), updateItem);
+      }
+
+      try {
+        const raw = localStorage.getItem("menpoe_event_updates_v1");
+        const list = raw ? JSON.parse(raw) : [];
+        list.unshift(updateItem);
+        localStorage.setItem("menpoe_event_updates_v1", JSON.stringify(list));
+      } catch {}
+
+      return updateItem;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ["event-updates", vars.eventId] });
+      qc.invalidateQueries({ queryKey: ["event", vars.eventId] });
+    },
+  });
+}
+
+// ─── MASTER ADMIN HOOKS ──────────────────────────────────────────────────────
+
+export function useGetAllUsersAdmin() {
+  return useQuery({
+    queryKey: ["admin-all-users"],
+    queryFn: async () => {
+      const d = load();
+      if (canUseFirestoreSocial()) {
+        try {
+          const snap = await getDocs(usersCol);
+          if (!snap.empty) {
+            const fsUsers = snap.docs.map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() as AnyObj) }));
+            const byId = new Map<string, AnyObj>();
+            d.users.forEach((u) => byId.set(u.id, u));
+            fsUsers.forEach((u) => byId.set(u.id, { ...byId.get(u.id), ...u }));
+            return Array.from(byId.values()).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+          }
+        } catch {
+          /* fallback */
+        }
+      }
+      return [...d.users].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+    },
+  });
+}
+
+export function useUpdateUserRoleAdmin() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ userId, role }: { userId: string; role: "admin" | "user" }) => {
+      const d = load();
+      const u = d.users.find((x) => x.id === userId);
+      if (u) u.role = role;
+      save(d);
+
+      if (canUseFirestoreSocial()) {
+        await updateDoc(doc(db, "users", userId), { role, updatedAt: now() });
+      }
+      return { userId, role };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-all-users"] });
+      qc.invalidateQueries({ queryKey: ["is-admin"] });
+      qc.invalidateQueries({ queryKey: ["me"] });
+    },
+  });
+}
+
+export function useVerifyUserAdmin() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ userId, isVerified }: { userId: string; isVerified: boolean }) => {
+      const d = load();
+      const u = d.users.find((x) => x.id === userId);
+      if (u) u.isVerified = isVerified;
+      save(d);
+
+      if (canUseFirestoreSocial()) {
+        await updateDoc(doc(db, "users", userId), { isVerified, updatedAt: now() });
+      }
+      return { userId, isVerified };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-all-users"] });
+      qc.invalidateQueries({ queryKey: ["user"] });
+      qc.invalidateQueries({ queryKey: ["me"] });
+    },
+  });
+}
+
+export function useSuspendUserAdmin() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ userId, isSuspended }: { userId: string; isSuspended: boolean }) => {
+      const d = load();
+      const u = d.users.find((x) => x.id === userId);
+      if (u) u.isSuspended = isSuspended;
+      save(d);
+
+      if (canUseFirestoreSocial()) {
+        await updateDoc(doc(db, "users", userId), { isSuspended, updatedAt: now() });
+      }
+      return { userId, isSuspended };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-all-users"] });
+    },
+  });
+}
+
+export function useGetGlobalStatsAdmin() {
+  return useQuery({
+    queryKey: ["admin-global-stats"],
+    queryFn: async () => {
+      const d = load();
+      let usersCount = d.users.length;
+      let postsCount = d.posts.length;
+      let eventsCount = d.events.length;
+      let communitiesCount = d.communities.length;
+
+      if (canUseFirestoreSocial()) {
+        try {
+          const [uSnap, pSnap, eSnap, cSnap] = await Promise.all([
+            getDocs(usersCol),
+            getDocs(postsCol),
+            getDocs(eventsCol),
+            getDocs(communitiesCol),
+          ]);
+          usersCount = Math.max(usersCount, uSnap.size);
+          postsCount = Math.max(postsCount, pSnap.size);
+          eventsCount = Math.max(eventsCount, eSnap.size);
+          communitiesCount = Math.max(communitiesCount, cSnap.size);
+        } catch {}
+      }
+
+      return {
+        usersCount,
+        postsCount,
+        eventsCount,
+        communitiesCount,
+      };
+    },
+  });
+}
+
+export function useGetSupportTicketsAdmin() {
+  return useQuery({
+    queryKey: ["admin-support-tickets"],
+    queryFn: async () => {
+      const d = loadExtra();
+      return [...d.helpTickets].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+    },
+  });
+}
+
+export function useUpdateSupportTicketAdmin() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ticketId, status, reply }: { ticketId: string; status: string; reply?: string }) => {
+      const d = loadExtra();
+      const ticket = d.helpTickets.find((t) => t.id === ticketId);
+      if (ticket) {
+        ticket.status = status;
+        if (reply) (ticket as AnyObj).adminReply = reply;
+        (ticket as AnyObj).updatedAt = now();
+        saveExtra(d);
+      }
+      return ticket;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-support-tickets"] });
+      qc.invalidateQueries({ queryKey: ["help-tickets"] });
+    },
   });
 }
 
@@ -2751,8 +3332,12 @@ export function useSendMessage() {
           const convSnap = await getDoc(convRef);
           const convData = convSnap.exists() ? (convSnap.data() as AnyObj) : {};
           const unreadCounts = { ...(convData.unreadCounts || {}) };
+          const recipientIds: string[] = [];
           for (const pid of convData.participantIds || []) {
-            if (pid !== me.id) unreadCounts[pid] = (Number(unreadCounts[pid]) || 0) + 1;
+            if (pid !== me.id) {
+              unreadCounts[pid] = (Number(unreadCounts[pid]) || 0) + 1;
+              recipientIds.push(pid);
+            }
           }
           unreadCounts[me.id] = 0;
           await updateDoc(convRef, {
@@ -2769,6 +3354,29 @@ export function useSendMessage() {
             [`typing.${me.id}`]: null,
             updatedAt: now(),
           });
+          // Create notification for each recipient so their bell badge updates
+          const senderName = me.displayName || me.email || "Alguien";
+          const preview =
+            m.content
+              ? m.content.substring(0, 60) + (m.content.length > 60 ? "…" : "")
+              : m.mediaType === "image"
+                ? "📷 Imagen"
+                : m.mediaType === "video"
+                  ? "🎥 Video"
+                  : m.mediaType === "audio"
+                    ? "🎵 Audio"
+                    : "Mensaje nuevo";
+          for (const recipientId of recipientIds) {
+            createNotification({
+              type: "message",
+              recipientId,
+              actorId: me.id,
+              title: `💬 Mensaje de ${senderName}`,
+              body: preview,
+              conversationId,
+              isRead: false,
+            }).catch(() => { /* ignore notification failure */ });
+          }
         } catch {
           /* ignore */
         }
@@ -2794,6 +3402,7 @@ export function useSendMessage() {
     onSuccess: () => qc.invalidateQueries(),
   });
 }
+
 
 export function useDeleteMessageForEveryone() {
   const qc = useQueryClient();

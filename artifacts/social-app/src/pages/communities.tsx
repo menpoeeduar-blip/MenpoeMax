@@ -23,10 +23,13 @@ import { useToast } from "@/hooks/use-toast";
 import { SharePostDialog } from "@/components/SharePostDialog";
 import { InviteToGroupModal } from "@/components/InviteToGroupModal";
 import { CreatePostBox } from "@/components/feed/CreatePostBox";
+import { CTAButton } from "@/components/CTAButton";
 import { CommentsPanel } from "@/components/comments/CommentsPanel";
+import { EntityVerificationModal } from "@/components/verification/EntityVerificationModal";
+import { EntityVerificationAdminModal } from "@/components/verification/EntityVerificationAdminModal";
 import {
   Search, Users, Globe, Lock, ArrowLeft, Plus, X, MessageCircle, Heart,
-  Camera, Settings, Share2, UserPlus,
+  Camera, Settings, Share2, UserPlus, ShieldCheck,
 } from "lucide-react";
 import { useLocation, useParams } from "wouter";
 import { cn } from "@/lib/utils";
@@ -111,11 +114,16 @@ function CommunityDetail({ communityId, onBack }: { communityId: string; onBack:
   const [sharePost, setSharePost] = useState<any>(null);
   const [showInvite, setShowInvite] = useState(false);
 
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [showVerifyAdminModal, setShowVerifyAdminModal] = useState(false);
+
   const meId = (me as any)?.id;
   const isCreator = community?.creatorId === meId;
   const isCommunityAdmin = Array.isArray((community as any)?.admins) && (community as any).admins.includes(meId);
   const canManageCommunity = isCreator || isCommunityAdmin;
   const isJoined = community?.isJoined;
+  const verifiedUserIds: string[] = (community as any)?.verifiedUserIds || [];
+  const isVerifiedUser = verifiedUserIds.includes(meId);
 
   const uploadCover = async (file: File) => {
     try {
@@ -179,7 +187,8 @@ function CommunityDetail({ communityId, onBack }: { communityId: string; onBack:
         {/* Action bar */}
         <div className="flex items-center justify-between px-5 py-3 flex-wrap gap-2">
           {c.description && <p className="text-sm text-muted-foreground flex-1">{c.description}</p>}
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex items-center gap-2 ml-auto flex-wrap">
+            <CTAButton title={c.name} description={c.description} />
             {/* Invite (available for all registered users) */}
             <Button
               size="sm"
@@ -189,6 +198,28 @@ function CommunityDetail({ communityId, onBack }: { communityId: string; onBack:
             >
               <UserPlus className="w-3.5 h-3.5" /> Invitar
             </Button>
+
+            {/* Verification action */}
+            {canManageCommunity ? (
+              <Button
+                size="sm"
+                variant="outline"
+                className="rounded-xl gap-1.5 border-cyan-500/30 text-cyan-400 hover:border-cyan-500 text-xs font-semibold"
+                onClick={() => setShowVerifyAdminModal(true)}
+              >
+                <ShieldCheck className="w-3.5 h-3.5" /> Verificaciones
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                className="rounded-xl gap-1.5 border-cyan-500/30 text-cyan-400 hover:border-cyan-500 text-xs font-semibold"
+                onClick={() => setShowVerifyModal(true)}
+              >
+                <ShieldCheck className="w-3.5 h-3.5" /> {isVerifiedUser ? "✓ Verificado" : "Verificación"}
+              </Button>
+            )}
+
             {canManageCommunity && (
               <Button size="sm" variant="outline" className="rounded-xl gap-1.5 border-primary/30 hover:border-primary text-xs">
                 <Settings className="w-3.5 h-3.5" /> Configurar
@@ -224,8 +255,11 @@ function CommunityDetail({ communityId, onBack }: { communityId: string; onBack:
                 alt=""
                 onClick={() => post.author?.id && setLocation(`/profile/${post.author.id}`)}
               />
-              <button type="button" className="text-sm font-medium hover:text-primary" onClick={() => post.author?.id && setLocation(`/profile/${post.author.id}`)}>
+              <button type="button" className="text-sm font-semibold hover:text-primary flex items-center gap-1" onClick={() => post.author?.id && setLocation(`/profile/${post.author.id}`)}>
                 {post.author?.displayName}
+                {verifiedUserIds.includes(post.author?.id) && (
+                  <ShieldCheck className="w-3.5 h-3.5 text-cyan-400 flex-none" title="Miembro Verificado" />
+                )}
               </button>
             </div>
             <p className="text-sm">{post.content}</p>
@@ -271,6 +305,28 @@ function CommunityDetail({ communityId, onBack }: { communityId: string; onBack:
           target={{ id: communityId, name: c.name, type: "community" }}
         />
       )}
+
+      {/* Verification user modal */}
+      <EntityVerificationModal
+        open={showVerifyModal}
+        onOpenChange={setShowVerifyModal}
+        entityType="community"
+        entityId={communityId}
+        entityName={c.name}
+        userId={meId}
+        userName={(me as any)?.displayName || "Usuario"}
+        userAvatar={(me as any)?.avatarUrl}
+        isAlreadyVerified={isVerifiedUser}
+      />
+
+      {/* Verification admin modal */}
+      <EntityVerificationAdminModal
+        open={showVerifyAdminModal}
+        onOpenChange={setShowVerifyAdminModal}
+        entityType="community"
+        entityId={communityId}
+        entityName={c.name}
+      />
     </div>
   );
 }

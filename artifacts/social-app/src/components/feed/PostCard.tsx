@@ -4,19 +4,25 @@ import {
   useLikePost,
   useSavePost,
   useGetMe,
+  useDeletePost,
+  useUpdatePost,
+  usePinPost,
 } from "@workspace/api-client-react";
 import { CommentsPanel } from "@/components/comments/CommentsPanel";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
   Heart, MessageCircle, Share2, Bookmark, MoreHorizontal,
-  CheckCircle, MapPin, Radio, Flame, Pause, Play, X, Globe, Lock, Users as UsersIcon
+  CheckCircle, MapPin, Radio, Flame, Pause, Play, X, Globe, Lock, Users as UsersIcon, Building2,
+  Trash2, Edit3, Pin, PinOff, MessageSquareOff, MessageSquare as MessageSquareIcon, Star,
 } from "lucide-react";
 import { SharePostDialog } from "@/components/SharePostDialog";
 import { PostGiftsStrip } from "@/components/gifts/PostGiftsStrip";
@@ -26,6 +32,7 @@ import { useUser } from "@clerk/react";
 import { useToast } from "@/hooks/use-toast";
 import { createContentReport } from "@/lib/moderation";
 import { auth } from "@/lib/firebase";
+import { AdPostCard } from "@/components/ads/AdPostCard";
 
 export type PostCardProps = {
   post: any;
@@ -33,6 +40,12 @@ export type PostCardProps = {
   onToggleComments?: () => void;
   onOpenGift?: () => void;
 };
+
+// ─── ROUTER: Delegate ad posts to AdPostCard ──────────────────────────────────
+export function PostCard(props: PostCardProps) {
+  if (props.post?.postType === "ad") return <AdPostCard post={props.post} />;
+  return <PostCardInner {...props} />;
+}
 
 // ─── VISUALIZADOR DE ENCUESTAS ───────────────────────────────────────────────
 export function PollViewer({ post, meId }: { post: any; meId: string }) {
@@ -221,9 +234,12 @@ export function getRoastText(content: string, authorName: string, isPoll: boolea
   return roasts[Math.floor(Math.random() * roasts.length)];
 }
 
-export const PostCard = memo(function PostCard({ post, showComments: initialShowComments = false, onToggleComments, onOpenGift }: PostCardProps) {
+const PostCardInner = memo(function PostCardInner({ post, showComments: initialShowComments = false, onToggleComments, onOpenGift }: PostCardProps) {
   const likePost = useLikePost();
   const savePost = useSavePost();
+  const deletePost = useDeletePost();
+  const updatePost = useUpdatePost();
+  const pinPost = usePinPost();
   const qc = useQueryClient();
   const [internalShowComments, setInternalShowComments] = useState(initialShowComments);
   const showComments = onToggleComments ? initialShowComments : internalShowComments;
@@ -235,10 +251,17 @@ export const PostCard = memo(function PostCard({ post, showComments: initialShow
   );
   const [localLikesCount, setLocalLikesCount] = useState(post.likesCount ?? 0);
   const [localSaved, setLocalSaved] = useState(post.isSaved ?? false);
+  const [localPinned, setLocalPinned] = useState(post.isPinned ?? false);
+  const [localCommentsDisabled, setLocalCommentsDisabled] = useState(post.commentsDisabled ?? false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editContent, setEditContent] = useState(post.content || "");
+  const [deleted, setDeleted] = useState(false);
+
   const { toast } = useToast();
   const { data: me } = useGetMe();
   const { user: clerkUser } = useUser();
   const meId = me?.id || clerkUser?.id || "guest";
+  const isMyPost = post.author?.id === meId || post.authorId === meId;
 
   const [roastText, setRoastText] = useState<string | null>(null);
   const [loadingRoast, setLoadingRoast] = useState(false);
@@ -272,12 +295,65 @@ export const PostCard = memo(function PostCard({ post, showComments: initialShow
     } catch {}
   };
 
+  const handleDeletePost = () => {
+    if (!window.confirm("¿Eliminar esta publicación permanentemente?")) return;
+    setDeleted(true);
+    deletePost.mutate(
+      { postId: post.id },
+      {
+        onSuccess: () => toast({ title: "✓ Publicación eliminada" }),
+        onError: () => {
+          setDeleted(false);
+          toast({ title: "Error", description: "No se pudo eliminar.", variant: "destructive" });
+        },
+      }
+    );
+  };
+
+  const handleEditSave = () => {
+    updatePost.mutate(
+      { postId: post.id, data: { content: editContent } },
+      {
+        onSuccess: () => {
+          setShowEditModal(false);
+          toast({ title: "✓ Publicación actualizada" });
+        },
+        onError: () => toast({ title: "Error", description: "No se pudo editar.", variant: "destructive" }),
+      }
+    );
+  };
+
+  const handlePin = () => {
+    const next = !localPinned;
+    setLocalPinned(next);
+    pinPost.mutate(
+      { postId: post.id, pinned: next },
+      {
+        onSuccess: () => toast({ title: next ? "📌 Publicación fijada" : "Publicación desfijada" }),
+        onError: () => setLocalPinned(!next),
+      }
+    );
+  };
+
+  const handleToggleComments = () => {
+    const next = !localCommentsDisabled;
+    setLocalCommentsDisabled(next);
+    updatePost.mutate(
+      { postId: post.id, data: { commentsDisabled: next } },
+      {
+        onSuccess: () => toast({ title: next ? "💬 Comentarios desactivados" : "💬 Comentarios activados" }),
+        onError: () => setLocalCommentsDisabled(!next),
+      }
+    );
+  };
+
   const handleReact = (reaction: "like" | "love" | "haha" | "wow" | "sad") => {
     const prev = localReaction;
     const next = prev === reaction ? null : reaction;
 
     if (!prev && next) setLocalLikesCount((c: number) => c + 1);
     if (prev && !next) setLocalLikesCount((c: number) => Math.max(0, c - 1));
+
     setLocalReaction(next);
 
     likePost.mutate({ postId: post.id, data: { reaction: next ?? "remove" } });
@@ -301,29 +377,73 @@ export const PostCard = memo(function PostCard({ post, showComments: initialShow
 
   const isAudioMedia = (url: string) =>
     url.startsWith("data:audio") || url.includes("/audios/") || url.includes(".webm") || url.includes(".mp3");
-  
+
   const isVideoMedia = (url: string) =>
     url.startsWith("data:video") || url.includes("/videos/") || url.endsWith(".mp4") || url.endsWith(".webm");
 
+  if (deleted) return null;
+
   return (
     <div id={`post-${post.id}`} className="glass-panel neon-border neon-run-soft feed-post-card rounded-2xl p-4 scroll-mt-24" data-testid={`post-card-${post.id}`}>
+      {/* Edit Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-[400] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowEditModal(false)}>
+          <div className="w-full max-w-md glass-panel neon-border rounded-2xl p-5 space-y-4 shadow-2xl animate-in fade-in zoom-in-95" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-base neon-text">✏️ Editar publicación</h3>
+              <button type="button" onClick={() => setShowEditModal(false)} className="p-1 rounded-full hover:bg-white/10"><X className="w-4 h-4" /></button>
+            </div>
+            <textarea
+              className="w-full min-h-[120px] bg-white/5 border border-border/40 rounded-xl p-3 text-sm resize-none focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/40"
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              placeholder="¿Qué quieres compartir?"
+            />
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" size="sm" className="rounded-xl" onClick={() => setShowEditModal(false)}>Cancelar</Button>
+              <Button size="sm" className="rounded-xl neon-btn" onClick={handleEditSave} disabled={updatePost.isPending}>Guardar</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header autor */}
       <div className="flex items-center gap-3 mb-3">
-        <Link href={`/profile/${authorProfileId}`}>
-          <img
-            src={post.author?.avatarUrl ?? `https://api.dicebear.com/7.x/avataaars/svg?seed=${authorProfileId}`}
-            className="w-10 h-10 rounded-full object-cover bg-muted cursor-pointer ring-2 ring-primary/20"
-            alt=""
-          />
-        </Link>
+        {post.authorType ? (
+          // Entity post — link to the page/group/community, not the author's personal profile
+          <div className="w-10 h-10 rounded-2xl overflow-hidden ring-2 ring-primary/30 flex-none bg-muted">
+            <img
+              src={post.entityAvatar ?? post.author?.avatarUrl ?? `https://api.dicebear.com/7.x/avataaars/svg?seed=${post.entityName}`}
+              className="w-10 h-10 object-cover"
+              alt=""
+            />
+          </div>
+        ) : (
+          <Link href={`/profile/${authorProfileId}`}>
+            <img
+              src={post.author?.avatarUrl ?? `https://api.dicebear.com/7.x/avataaars/svg?seed=${authorProfileId}`}
+              className="w-10 h-10 rounded-full object-cover bg-muted cursor-pointer ring-2 ring-primary/20"
+              alt=""
+            />
+          </Link>
+        )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <Link href={`/profile/${authorProfileId}`} className="font-semibold text-sm hover:text-primary truncate">
-              {post.author?.displayName || "Usuario"}
-            </Link>
+            {post.authorType ? (
+              <span className="font-bold text-sm text-primary neon-text">
+                {post.entityName || post.author?.displayName || "Publicación"}
+              </span>
+            ) : (
+              <Link href={`/profile/${authorProfileId}`} className="font-semibold text-sm hover:text-primary truncate">
+                {post.author?.displayName || "Usuario"}
+              </Link>
+            )}
             {post.author?.isVerified && <CheckCircle className="w-3.5 h-3.5 text-primary flex-none" />}
+            {post.authorType === "page" && <Building2 className="w-3 h-3 text-emerald-400 flex-none" title="Página" />}
+            {post.authorType === "group" && <UsersIcon className="w-3 h-3 text-violet-400 flex-none" title="Grupo" />}
+            {post.authorType === "community" && <Globe className="w-3 h-3 text-sky-400 flex-none" title="Comunidad" />}
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
             <span>hace {timeAgo}</span>
             {post.visibility && (
               <span className="flex items-center gap-0.5 text-[10px] bg-white/5 px-1.5 py-0.5 rounded-md border border-border/30">
@@ -336,19 +456,70 @@ export const PostCard = memo(function PostCard({ post, showComments: initialShow
                 <MapPin className="w-3 h-3" /> {post.location}
               </span>
             )}
+            {localPinned && (
+              <span className="flex items-center gap-0.5 text-amber-400 font-medium text-[10px]">
+                <Pin className="w-3 h-3" /> Fijado
+              </span>
+            )}
+            {localCommentsDisabled && (
+              <span className="flex items-center gap-0.5 text-orange-400/80 font-medium text-[10px]">
+                <MessageSquareOff className="w-3 h-3" /> Comentarios off
+              </span>
+            )}
           </div>
         </div>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="text-muted-foreground hover:text-foreground transition-colors p-1"><MoreHorizontal className="w-5 h-5" /></button>
+            <button className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg hover:bg-white/10"><MoreHorizontal className="w-5 h-5" /></button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleReport}>Reportar publicación</DropdownMenuItem>
-            <DropdownMenuItem onClick={handleBlock}>Bloquear autor</DropdownMenuItem>
+          <DropdownMenuContent align="end" className="glass-panel neon-border min-w-[210px] rounded-2xl p-1.5">
+            {isMyPost ? (
+              <>
+                <DropdownMenuItem
+                  className="flex gap-2 items-center cursor-pointer rounded-xl py-2"
+                  onClick={() => { setEditContent(post.content || ""); setShowEditModal(true); }}
+                >
+                  <Edit3 className="w-4 h-4 text-primary" /> Editar publicación
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="flex gap-2 items-center cursor-pointer rounded-xl py-2"
+                  onClick={handlePin}
+                >
+                  {localPinned ? <PinOff className="w-4 h-4 text-amber-400" /> : <Pin className="w-4 h-4 text-amber-400" />}
+                  {localPinned ? "Desfijar publicación" : "📌 Fijar en mi perfil"}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="flex gap-2 items-center cursor-pointer rounded-xl py-2"
+                  onClick={handleToggleComments}
+                >
+                  {localCommentsDisabled
+                    ? <MessageSquareIcon className="w-4 h-4 text-emerald-400" />
+                    : <MessageSquareOff className="w-4 h-4 text-orange-400" />}
+                  {localCommentsDisabled ? "Activar comentarios" : "Desactivar comentarios"}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="flex gap-2 items-center cursor-pointer rounded-xl py-2 text-red-400 focus:text-red-300"
+                  onClick={handleDeletePost}
+                >
+                  <Trash2 className="w-4 h-4" /> Eliminar publicación
+                </DropdownMenuItem>
+              </>
+            ) : (
+              <>
+                <DropdownMenuItem className="flex gap-2 items-center cursor-pointer rounded-xl py-2" onClick={handleReport}>
+                  Reportar publicación
+                </DropdownMenuItem>
+                <DropdownMenuItem className="flex gap-2 items-center cursor-pointer rounded-xl py-2" onClick={handleBlock}>
+                  Bloquear autor
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
 
       {/* Banner si es Live Stream */}
       {(post.postType === "live" || post.streamUrl) && (
@@ -448,11 +619,17 @@ export const PostCard = memo(function PostCard({ post, showComments: initialShow
 
         <button
           type="button"
-          onClick={toggleComments}
-          className={`flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl text-sm transition-colors touch-manipulation ${showComments ? "text-primary bg-primary/10" : "text-muted-foreground hover:bg-white/5 active:bg-white/10"}`}
+          onClick={!localCommentsDisabled ? toggleComments : undefined}
+          disabled={localCommentsDisabled}
+          className={`flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-xl text-sm transition-colors touch-manipulation ${
+            localCommentsDisabled
+              ? "text-muted-foreground/40 cursor-not-allowed"
+              : showComments ? "text-primary bg-primary/10" : "text-muted-foreground hover:bg-white/5 active:bg-white/10"
+          }`}
           data-testid={`button-comment-${post.id}`}
+          title={localCommentsDisabled ? "Comentarios desactivados" : "Comentarios"}
         >
-          <MessageCircle className="w-4 h-4" />
+          {localCommentsDisabled ? <MessageSquareOff className="w-4 h-4" /> : <MessageCircle className="w-4 h-4" />}
           <span>{post.commentsCount ?? 0}</span>
         </button>
 
@@ -502,7 +679,7 @@ export const PostCard = memo(function PostCard({ post, showComments: initialShow
         </button>
       </div>
 
-      {showComments && <CommentsPanel postId={post.id} postAuthorId={post.author?.id ?? post.authorId} testIdPrefix={`comment-${post.id}`} />}
+      {showComments && !localCommentsDisabled && <CommentsPanel postId={post.id} postAuthorId={post.author?.id ?? post.authorId} testIdPrefix={`comment-${post.id}`} />}
     </div>
   );
 });

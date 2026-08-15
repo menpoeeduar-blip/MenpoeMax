@@ -42,6 +42,7 @@ import Legal from "./pages/legal";
 import WalletPage from "./pages/wallet";
 import AdminGiftsPage from "./pages/admin-gifts";
 import AdminReportsPage from "./pages/admin-reports";
+import AdminDashboard from "./pages/admin-dashboard";
 import ResumePage from "./pages/resume";
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string;
@@ -264,6 +265,8 @@ function AppRoutes() {
       <Route path="/analytics" component={() => <ProtectedRoute component={Analytics} />} />
       <Route path="/promote" component={() => <ProtectedRoute component={Promote} />} />
       <Route path="/wallet" component={() => <ProtectedRoute component={WalletPage} />} />
+      <Route path="/admin" component={() => <ProtectedRoute component={AdminDashboard} />} />
+      <Route path="/admin-dashboard" component={() => <ProtectedRoute component={AdminDashboard} />} />
       <Route path="/admin/gifts" component={() => <ProtectedRoute component={AdminGiftsPage} />} />
       <Route path="/admin/reports" component={() => <ProtectedRoute component={AdminReportsPage} />} />
       <Route path="/community-admin" component={() => <ProtectedRoute component={CommunityAdmin} />} />

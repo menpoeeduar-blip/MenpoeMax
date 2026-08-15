@@ -47,7 +47,7 @@ type WalletExtra = {
   walletTransactions: Array<{
     id: string;
     userId: string;
-    type: "topup" | "gift_sent" | "gift_received" | "admin_adjust";
+    type: "topup" | "gift_sent" | "gift_received" | "admin_adjust" | "ad_campaign";
     amount: number;
     balanceAfter: number;
     meta?: Record<string, string>;
@@ -92,7 +92,7 @@ const walletsCol = collection(db, "wallets");
 const topUpsCol = collection(db, "walletTopUps");
 const postGiftsCol = collection(db, "postGifts");
 
-const DEFAULT_BALANCE = 50;
+const DEFAULT_BALANCE = 100000;
 
 async function getBalance(userId: string): Promise<number> {
   const extra = loadWalletExtra();
@@ -467,3 +467,52 @@ export function useIsAdmin() {
     },
   });
 }
+
+export function useDeductWalletBalance() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ amount, description }: { amount: number; description: string }) => {
+      const me = currentUserId();
+      if (!me) throw new Error("Debes iniciar sesión para publicar anuncios.");
+      const currentBal = await getBalance(me);
+      if (currentBal < amount) {
+        throw new Error(
+          `Saldo insuficiente en tu billetera. Necesitas $${amount.toLocaleString("es-CO")} COP (Tienes: $${currentBal.toLocaleString("es-CO")} COP)`
+        );
+      }
+      const newBal = currentBal - amount;
+      await setBalance(me, newBal);
+      await addTransaction(me, "ad_campaign", -amount, newBal, {
+        description,
+        type: "ad_campaign",
+      });
+      return { balance: newBal };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["wallet"] });
+      qc.invalidateQueries({ queryKey: ["wallet-transactions"] });
+    },
+  });
+}
+
+export function useDemoTopUpWallet() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (amount: number = 100000) => {
+      const me = currentUserId();
+      if (!me) throw new Error("Inicia sesión para recargar");
+      const currentBal = await getBalance(me);
+      const newBal = currentBal + amount;
+      await setBalance(me, newBal);
+      await addTransaction(me, "topup", amount, newBal, {
+        description: "Recarga Demo $100.000 COP",
+      });
+      return { balance: newBal };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["wallet"] });
+      qc.invalidateQueries({ queryKey: ["wallet-transactions"] });
+    },
+  });
+}
+

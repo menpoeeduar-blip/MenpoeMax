@@ -8,9 +8,10 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Image, Sparkles, Sticker, X, BarChart3, Save, Mic, MapPin, Radio, Video, Play, Volume2, Globe, Lock, Users as UsersIcon
+  Image, Sparkles, Sticker, X, BarChart3, Save, Mic, MapPin, Radio, Video, Play, Volume2, Globe, Lock, Users as UsersIcon, Megaphone
 } from "lucide-react";
 import { StickerPicker } from "@/components/stickers/StickerPicker";
+import { CreateAdCampaignModal } from "@/components/ads/CreateAdCampaignModal";
 import { uploadFile, LOCAL_STORAGE_BUDGET_HINT } from "@/lib/upload";
 import { useUser } from "@clerk/react";
 import { useToast } from "@/hooks/use-toast";
@@ -23,6 +24,7 @@ export type CreatePostBoxProps = {
   className?: string;
   defaultVisibility?: "publico" | "amigos" | "solo_yo";
   pageId?: string;
+  groupId?: string;
   communityId?: string;
 };
 
@@ -32,6 +34,7 @@ export function CreatePostBox({
   className = "",
   defaultVisibility = "publico",
   pageId,
+  groupId,
   communityId,
 }: CreatePostBoxProps) {
   const { data: me } = useGetMe();
@@ -52,6 +55,7 @@ export function CreatePostBox({
   const [mediaFiles, setMediaFiles] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [showStickerPicker, setShowStickerPicker] = useState(false);
+  const [showAdModal, setShowAdModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Poll state variables
@@ -539,6 +543,17 @@ export function CreatePostBox({
                   <Sparkles className="w-5 h-5" />
                 </button>
 
+                {/* Campaña Publicitaria */}
+                <button
+                  type="button"
+                  onClick={() => setShowAdModal(true)}
+                  className="transition-colors p-2 rounded-xl hover:bg-amber-500/10 text-amber-400/60 hover:text-amber-400"
+                  title="Crear Campaña Publicitaria"
+                  data-testid="button-create-ad"
+                >
+                  <Megaphone className="w-5 h-5" />
+                </button>
+
                 <div className="ml-auto flex gap-2">
                   <Button
                     size="sm"
@@ -572,20 +587,33 @@ export function CreatePostBox({
               </div>
             </>
           ) : (
-            <button
-              type="button"
-              onClick={() => setExpanded(true)}
-              className="w-full text-left bg-white/5 rounded-xl px-4 py-3 text-muted-foreground text-sm hover:bg-white/8 transition-colors flex items-center justify-between"
-              data-testid="button-create-post"
-            >
-              <span>{placeholder}</span>
-              <div className="flex gap-2 text-muted-foreground/60">
-                <Image className="w-4 h-4" />
-                <Mic className="w-4 h-4" />
-                <BarChart3 className="w-4 h-4" />
-                <Radio className="w-4 h-4" />
-              </div>
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => setExpanded(true)}
+                className="w-full text-left bg-white/5 rounded-xl px-4 py-3 text-muted-foreground text-sm hover:bg-white/8 transition-colors flex items-center justify-between"
+                data-testid="button-create-post"
+              >
+                <span>{placeholder}</span>
+                <div className="flex gap-2 text-muted-foreground/60">
+                  <Image className="w-4 h-4" />
+                  <Mic className="w-4 h-4" />
+                  <BarChart3 className="w-4 h-4" />
+                  <Radio className="w-4 h-4" />
+                </div>
+              </button>
+              {/* Campaign ad shortcut */}
+              <button
+                type="button"
+                onClick={() => setShowAdModal(true)}
+                className="mt-2 w-full flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500/10 to-rose-500/10 border border-amber-500/25 hover:border-amber-400/50 text-amber-400 text-xs font-semibold transition-all hover:from-amber-500/15 hover:to-rose-500/15"
+                data-testid="button-create-ad-shortcut"
+              >
+                <Megaphone className="w-4 h-4 animate-pulse" />
+                Crear Campaña Publicitaria
+                <span className="ml-auto text-[10px] text-muted-foreground font-normal">Llega a más personas</span>
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -643,6 +671,14 @@ export function CreatePostBox({
           </div>
         </DialogContent>
       </Dialog>
+
+      <CreateAdCampaignModal
+        open={showAdModal}
+        onOpenChange={setShowAdModal}
+        pageId={pageId}
+        groupId={groupId}
+        communityId={communityId}
+      />
     </div>
   );
 }

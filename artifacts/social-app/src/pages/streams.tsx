@@ -114,7 +114,7 @@ function StreamViewer({ streamId, onBack }: { streamId: string; onBack: () => vo
   const host = stream.host as { id: string; displayName?: string; avatarUrl?: string; isVerified?: boolean };
 
   return (
-    <div>
+    <div className="w-full max-w-full overflow-x-hidden">
       <button type="button" onClick={onBack} className="flex items-center gap-2 text-muted-foreground hover:text-primary mb-4 transition-colors neon-subtle">
         <ArrowLeft className="w-4 h-4" /> Volver a transmisiones
       </button>
@@ -144,11 +144,12 @@ function StreamViewer({ streamId, onBack }: { streamId: string; onBack: () => vo
         </div>
       )}
 
-      <div className="grid md:grid-cols-3 gap-4">
-        <div className="md:col-span-2 glass-panel neon-border neon-run rounded-2xl p-5">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
+      {/* Info + Chat — stacked on mobile, side by side on md+ */}
+      <div className="flex flex-col md:grid md:grid-cols-3 gap-4 w-full max-w-full">
+        <div className="md:col-span-2 glass-panel neon-border neon-run rounded-2xl p-4 sm:p-5 w-full min-w-0">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
                 {stream.isLive && (
                   <Badge className="bg-red-500 text-white font-bold flex items-center gap-1">
                     <span className="w-2 h-2 rounded-full bg-white animate-pulse" /> EN VIVO
@@ -158,25 +159,25 @@ function StreamViewer({ streamId, onBack }: { streamId: string; onBack: () => vo
                   <Eye className="w-3.5 h-3.5" /> {stream.viewersCount ?? 0} espectadores
                 </Badge>
               </div>
-              <h1 className="text-xl font-bold neon-title mb-1">{stream.title}</h1>
-              {stream.description && <p className="text-sm text-muted-foreground mb-3">{stream.description}</p>}
+              <h1 className="text-lg sm:text-xl font-bold neon-title mb-1 break-words">{stream.title}</h1>
+              {stream.description && <p className="text-sm text-muted-foreground mb-3 break-words">{stream.description}</p>}
               <div className="flex items-center gap-3">
                 <img
                   src={host?.avatarUrl ?? `https://api.dicebear.com/7.x/avataaars/svg?seed=${host?.id}`}
-                  className="w-9 h-9 rounded-full object-cover ring-2 ring-primary/40 cursor-pointer"
+                  className="w-9 h-9 rounded-full object-cover ring-2 ring-primary/40 cursor-pointer shrink-0"
                   alt=""
                   onClick={() => host?.id && setLocation(`/profile/${host.id}`)}
                 />
-                <div>
+                <div className="min-w-0">
                   <button
                     type="button"
-                    className="font-medium text-sm neon-text flex items-center gap-1 hover:text-primary"
+                    className="font-medium text-sm neon-text flex items-center gap-1 hover:text-primary truncate max-w-full"
                     onClick={() => host?.id && setLocation(`/profile/${host.id}`)}
                   >
                     {host?.displayName || "Anfitrión"}
-                    {host?.isVerified && <CheckCircle className="w-3.5 h-3.5 text-primary" />}
+                    {host?.isVerified && <CheckCircle className="w-3.5 h-3.5 text-primary flex-none" />}
                   </button>
-                  {stream.category && <div className="text-xs text-muted-foreground">{stream.category}</div>}
+                  {stream.category && <div className="text-xs text-muted-foreground truncate">{stream.category}</div>}
                 </div>
               </div>
             </div>
@@ -184,7 +185,7 @@ function StreamViewer({ streamId, onBack }: { streamId: string; onBack: () => vo
               <Button
                 variant="destructive"
                 size="sm"
-                className="rounded-xl"
+                className="rounded-xl shrink-0"
                 onClick={() =>
                   endStream.mutate(
                     { streamId },
@@ -248,7 +249,7 @@ export default function Streams() {
 
   return (
     <Shell>
-      <div className="max-w-6xl mx-auto w-full p-4 pb-24">
+      <div className="max-w-6xl mx-auto w-full px-3 sm:px-4 pb-24 max-w-full overflow-x-hidden">
         <CreateLiveModal open={showCreate} onClose={() => setShowCreate(false)} onStart={handleStart} loading={startStream.isPending} />
 
         {streamIdFromUrl ? (

@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   Send, Search, MessageSquare, Check, CheckCheck, Sticker,
-  Phone, Video, Trash2, Reply, SmilePlus, MoreHorizontal, ArrowLeft, MessageSquarePlus,
+  Phone, Video, Trash2, Reply, MoreHorizontal, ArrowLeft, MessageSquarePlus,
   Paperclip, Mic, MicOff, X, Play, Pause, Image as ImageIcon, FileVideo,
 } from "lucide-react";
 import { StickerPicker } from "@/components/stickers/StickerPicker";
@@ -167,35 +167,10 @@ function MsgBubble({ msg, isMe, currentUserId, onReply, onReact, onDelete, onDel
     return acc;
   }, {});
 
-  const [showActions, setShowActions] = useState(false);
-  const touchTimerRef = useRef<number | null>(null);
-
-  const handleTouchStart = () => {
-    touchTimerRef.current = window.setTimeout(() => {
-      setShowActions(true);
-    }, 450);
-  };
-
-  const handleTouchEnd = () => {
-    if (touchTimerRef.current) {
-      clearTimeout(touchTimerRef.current);
-      touchTimerRef.current = null;
-    }
-  };
-
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setShowActions(true);
-  };
-
   return (
     <div
-      className={`flex gap-2 group select-none ${isMe ? "flex-row-reverse" : "flex-row"}`}
+      className={`flex gap-1.5 group ${isMe ? "flex-row-reverse" : "flex-row"}`}
       data-testid={`message-${msg.id}`}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      onTouchMove={handleTouchEnd}
-      onContextMenu={handleContextMenu}
     >
       {!isMe && (
         <img
@@ -204,7 +179,70 @@ function MsgBubble({ msg, isMe, currentUserId, onReply, onReact, onDelete, onDel
           alt=""
         />
       )}
-      <div className={`max-w-[78%] relative ${isMe ? "items-end" : "items-start"} flex flex-col gap-1`}>
+
+      {/* 3-dots menu — shown only when not deleted, positioned outside bubble */}
+      {!deleted && (
+        <div className={`flex items-center self-center opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 transition-opacity ${isMe ? "order-last mr-0 ml-0.5" : "order-first ml-0 mr-0.5"}`}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="p-1 rounded-full hover:bg-white/15 text-muted-foreground hover:text-foreground transition-colors"
+                title="Opciones del mensaje"
+                data-testid={`msg-menu-${msg.id}`}
+              >
+                <MoreHorizontal className="w-4 h-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align={isMe ? "end" : "start"}
+              className="glass-panel neon-border z-[220] min-w-[180px] p-1.5 rounded-2xl"
+            >
+              {/* Quick reactions row */}
+              <div className="flex justify-around bg-black/30 p-2 rounded-xl border border-white/10 mb-1.5">
+                {REACTIONS.map((emoji) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    className="text-lg hover:scale-125 transition"
+                    onClick={() => onReact(msg.id, emoji)}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+
+              <DropdownMenuItem
+                className="flex gap-2 items-center text-sm cursor-pointer rounded-xl"
+                onClick={() => onReply(msg)}
+              >
+                <Reply className="w-4 h-4 text-primary" />
+                Responder
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                className="flex gap-2 items-center text-sm text-amber-400 hover:text-amber-300 focus:text-amber-300 cursor-pointer rounded-xl"
+                onClick={() => onDeleteForMe(msg.id)}
+              >
+                <Trash2 className="w-4 h-4" />
+                Eliminar para mí
+              </DropdownMenuItem>
+
+              {isMe && (
+                <DropdownMenuItem
+                  className="flex gap-2 items-center text-sm text-red-400 hover:text-red-300 focus:text-red-300 cursor-pointer rounded-xl"
+                  onClick={() => onDelete(msg.id)}
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Eliminar para todos
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
+
+      <div className={`msg-bubble-wrap relative ${isMe ? "items-end" : "items-start"} flex flex-col gap-1`}>
         {msg.replySnippet && (
           <div className={`text-[10px] px-3 py-1 rounded-lg border border-border/40 bg-black/20 ${isMe ? "text-right" : ""}`}>
             Respondiendo: {msg.replySnippet}
@@ -212,7 +250,7 @@ function MsgBubble({ msg, isMe, currentUserId, onReply, onReact, onDelete, onDel
         )}
 
         <div
-          className={`px-3 py-2 rounded-2xl text-sm transition-all cursor-pointer ${
+          className={`px-3 py-2 rounded-2xl text-sm transition-all ${
             deleted
               ? "bg-white/5 italic text-muted-foreground border border-dashed border-border/50"
               : isMe
@@ -281,122 +319,11 @@ function MsgBubble({ msg, isMe, currentUserId, onReply, onReact, onDelete, onDel
             ))}
           </div>
         )}
-
-        {!deleted && (
-          <div className={`opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5 ${isMe ? "flex-row-reverse" : ""}`}>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button type="button" className="p-1 rounded-md hover:bg-white/10" title="Reaccionar">
-                  <SmilePlus className="w-3.5 h-3.5" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="glass-panel neon-border flex gap-1 p-2 z-[220]">
-                {REACTIONS.map((emoji) => (
-                  <button
-                    key={emoji}
-                    type="button"
-                    className="text-lg hover:scale-125 transition"
-                    onClick={() => onReact(msg.id, emoji)}
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <button type="button" className="p-1 rounded-md hover:bg-white/10" title="Responder" onClick={() => onReply(msg)}>
-              <Reply className="w-3.5 h-3.5" />
-            </button>
-            <button type="button" className="p-1 rounded-md hover:bg-white/10" title="Más opciones" onClick={() => setShowActions(true)}>
-              <MoreHorizontal className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        )}
       </div>
-
-      {/* Action Dialog (Touch Long Press / Right Click / More menu) */}
-      {showActions && (
-        <div
-          className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={() => setShowActions(false)}
-        >
-          <div
-            className="w-full max-w-xs glass-panel neon-border rounded-2xl p-4 space-y-3 shadow-2xl animate-in fade-in zoom-in-95"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider text-center">Opciones de mensaje</p>
-            
-            {/* Reacciones rápidas */}
-            <div className="flex justify-around bg-black/30 p-2 rounded-xl border border-white/10">
-              {REACTIONS.map((emoji) => (
-                <button
-                  key={emoji}
-                  type="button"
-                  className="text-xl hover:scale-125 transition"
-                  onClick={() => {
-                    onReact(msg.id, emoji);
-                    setShowActions(false);
-                  }}
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
-
-            <div className="space-y-1">
-              {!deleted && (
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start gap-2 text-sm rounded-xl"
-                  onClick={() => {
-                    onReply(msg);
-                    setShowActions(false);
-                  }}
-                >
-                  <Reply className="w-4 h-4 text-primary" />
-                  Responder
-                </Button>
-              )}
-
-              <Button
-                variant="ghost"
-                className="w-full justify-start gap-2 text-sm text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 rounded-xl"
-                onClick={() => {
-                  onDeleteForMe(msg.id);
-                  setShowActions(false);
-                }}
-              >
-                <Trash2 className="w-4 h-4" />
-                Eliminar para mí
-              </Button>
-
-              {isMe && !deleted && (
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start gap-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-xl"
-                  onClick={() => {
-                    onDelete(msg.id);
-                    setShowActions(false);
-                  }}
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Eliminar para todos
-                </Button>
-              )}
-
-              <Button
-                variant="outline"
-                className="w-full text-xs rounded-xl mt-2"
-                onClick={() => setShowActions(false)}
-              >
-                Cancelar
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
+
 
 // ── ChatWindow ───────────────────────────────────────────────────────────────
 function ChatWindow({
@@ -772,7 +699,7 @@ function ChatWindow({
             </div>
           </div>
         ) : (
-          <div className="flex gap-2 items-end">
+          <div className="flex gap-1.5 items-center w-full min-w-0 overflow-x-hidden">
             {/* Hidden file input */}
             <input
               ref={fileInputRef}
@@ -788,7 +715,7 @@ function ChatWindow({
               type="button"
               variant="ghost"
               size="icon"
-              className="rounded-2xl shrink-0"
+              className="rounded-2xl shrink-0 h-9 w-9 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground"
               onClick={() => fileInputRef.current?.click()}
               title="Adjuntar imagen o video"
               data-testid="button-attach-media"
@@ -801,7 +728,7 @@ function ChatWindow({
               type="button"
               variant="ghost"
               size="icon"
-              className="rounded-2xl shrink-0"
+              className="rounded-2xl shrink-0 h-9 w-9 p-0 flex items-center justify-center text-muted-foreground hover:text-foreground"
               onClick={() => setShowStickerPicker(true)}
               title="Sticker"
             >
@@ -814,7 +741,7 @@ function ChatWindow({
               onChange={(e) => onTextChange(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && void handleSend()}
               placeholder="Escribe un mensaje..."
-              className="rounded-2xl bg-white/5"
+              className="rounded-2xl bg-white/5 flex-1 min-w-0 h-10 text-sm"
               data-testid="input-message"
             />
 
@@ -824,7 +751,7 @@ function ChatWindow({
                 onClick={() => void handleSend()}
                 disabled={sendMessage.isPending}
                 size="icon"
-                className="rounded-full flex-none neon-btn"
+                className="rounded-full shrink-0 h-9 w-9 p-0 flex items-center justify-center neon-btn"
                 data-testid="button-send"
               >
                 <Send className="w-4 h-4" />
@@ -834,7 +761,7 @@ function ChatWindow({
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="rounded-full flex-none text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                className="rounded-full shrink-0 h-9 w-9 p-0 flex items-center justify-center text-red-400 hover:text-red-300 hover:bg-red-500/10"
                 onMouseDown={(e) => { e.preventDefault(); void startVoiceRecording(); }}
                 title="Mantén para grabar nota de voz"
                 data-testid="button-voice-note"
@@ -977,7 +904,7 @@ export default function Messages() {
           setLocation(`/messages?conv=${id}`);
         }}
       />
-      <div className="flex h-[calc(100dvh-8rem)] md:h-[calc(100dvh-4rem)] overflow-hidden">
+      <div className="flex h-[calc(100dvh-7.5rem)] md:h-[calc(100dvh-4rem)] w-full max-w-full overflow-hidden">
         <div className={`${activeConvId ? "hidden md:flex" : "flex"} flex-col w-full md:w-80 border-r border-border/50`}>
           <div className="p-4 border-b border-border/50 space-y-3">
             <div className="flex items-center justify-between gap-2">

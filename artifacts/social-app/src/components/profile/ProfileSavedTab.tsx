@@ -19,8 +19,8 @@ export function ProfileSavedTab() {
       <TabsContent value="posts" className="space-y-3 mt-0">
         {(data?.posts ?? []).length === 0 ? (
           <div className="glass-panel neon-border rounded-2xl p-8 text-center text-muted-foreground">
-            <FileText className="w-10 h-10 mx-auto mb-2 opacity-40" />
-            <p>No hay publicaciones guardadas</p>
+            <Bookmark className="w-10 h-10 mx-auto mb-2 opacity-40 text-amber-400" />
+            <p>No tienes publicaciones guardadas en favoritos</p>
           </div>
         ) : (
           (data?.posts ?? []).map((p: { id: string; content?: string; author?: { displayName?: string; id?: string } }) => (

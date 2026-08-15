@@ -105,7 +105,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const profileSections = profileId ? profileHubSections(profileId) : [];
   const adminItems = isAdmin
     ? [
-        { icon: ShieldCheck, label: "Admin — Recargas", href: "/admin/gifts" },
+        { icon: ShieldCheck, label: "👑 Panel Admin Master", href: "/admin" },
+        { icon: Coins, label: "Admin — Recargas", href: "/admin/gifts" },
         { icon: Flag, label: "Admin — Moderación", href: "/admin/reports" },
       ]
     : [];
@@ -290,7 +291,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <div className="mx-auto flex max-w-[1400px] pt-16">
+      <div className="mx-auto flex max-w-[1400px] pt-16 w-full overflow-x-hidden">
         <aside className="hidden lg:flex flex-col w-64 xl:w-72 border-r border-primary/20 h-[calc(100vh-4rem)] sticky top-16">
           <ScrollArea className="flex-1 p-4">
             <div className="glass-panel neon-border rounded-2xl p-3 mb-4">
@@ -331,7 +332,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         
         <main
           className={cn(
-            "flex-1 min-w-0 flex flex-col min-h-0",
+            "flex-1 min-w-0 flex flex-col min-h-0 max-w-full overflow-x-hidden",
             isReelsPage
               ? "mb-16 md:mb-0 h-[calc(100dvh-8rem)] md:h-[calc(100vh-4rem)] max-h-[calc(100dvh-8rem)] md:max-h-[calc(100vh-4rem)] overflow-hidden p-0"
               : "mb-16 md:mb-0 min-h-[calc(100vh-4rem)]",
