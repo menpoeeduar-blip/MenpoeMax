@@ -59,33 +59,30 @@
   --wa-doodle-color: 255 255 255;
 }
 
-/* ── Light Mode ──────────────────────────────────────────────────────────── */
+/* ── Light Mode Palette (WhatsApp Authentic Warm Tones) ─────────────────── */
 html.light {
-  --background: 220 20% 96%;
-  --foreground: 222 47% 11%;
-  --border: 220 20% 78%;
-  --input: 220 15% 90%;
-  --ring: 195 80% 44%;
-  --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
+  --background: 38 29% 91%; /* #efeae2 Warm WhatsApp chat beige background */
+  --foreground: 213 27% 12%; /* #141b22 Deep crisp slate for maximum readability */
+  --card: 0 0% 100%; /* Pure white clean cards */
+  --card-foreground: 213 27% 12%;
   --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 11%;
-  --primary: 195 80% 44%;
+  --popover-foreground: 213 27% 12%;
+  --primary: 174 72% 38%; /* #1da88a WhatsApp classic teal */
   --primary-foreground: 0 0% 100%;
-  --secondary: 220 14% 88%;
-  --secondary-foreground: 222 47% 11%;
-  --muted: 220 14% 90%;
-  --muted-foreground: 220 10% 46%;
-  --accent: 280 60% 55%;
+  --secondary: 40 20% 96%;
+  --secondary-foreground: 213 27% 12%;
+  --muted: 40 18% 88%;
+  --muted-foreground: 215 16% 40%; /* #54656f WhatsApp secondary text */
+  --accent: 174 72% 38%;
   --accent-foreground: 0 0% 100%;
   --destructive: 0 72% 48%;
   --destructive-foreground: 0 0% 98%;
-  /* WhatsApp doodle variables - light mode */
-  --wa-doodle-opacity: 0.055;
-  --wa-doodle-color: 80 120 140;
+  --border: 214 20% 86%; /* Clean card borders */
+  --input: 214 20% 86%;
+  --ring: 174 72% 38%;
 }
 
-/* WhatsApp doodle SVG pattern — inline data URI tiled background */
+/* WhatsApp doodle pattern layer */
 @layer base {
   * { @apply border-border; }
   html, body, #root {
@@ -95,38 +92,95 @@ html.light {
     -webkit-tap-highlight-color: transparent;
   }
   body {
-    @apply font-sans antialiased bg-background;
+    @apply font-sans antialiased;
     color: hsl(195 88% 86%);
     text-shadow: 0 0 8px hsl(var(--primary) / 0.28), 0 0 14px hsl(var(--accent) / 0.12);
-    /* WhatsApp-style doodle tiled background */
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='none' stroke='%23ffffff' stroke-width='0.8' stroke-linecap='round' stroke-linejoin='round' opacity='0.06'%3E%3Ccircle cx='20' cy='20' r='7'/%3E%3Ccircle cx='60' cy='60' r='7'/%3E%3Ccircle cx='20' cy='60' r='4'/%3E%3Ccircle cx='60' cy='20' r='4'/%3E%3Cpath d='M36 24 Q40 16 44 24 Q48 32 44 36 Q40 40 36 36 Q32 32 36 24z'/%3E%3Cpath d='M36 56 Q40 48 44 56 Q48 64 44 68 Q40 72 36 68 Q32 64 36 56z'/%3E%3Ccircle cx='40' cy='40' r='2.5'/%3E%3Cpath d='M12 40 Q16 36 20 40 Q24 44 20 48 Q16 52 12 48 Q8 44 12 40z'/%3E%3Cpath d='M60 40 Q64 36 68 40 Q72 44 68 48 Q64 52 60 48 Q56 44 60 40z'/%3E%3Cpath d='M2 2 L6 6 M74 74 L78 78 M2 78 L6 74 M74 6 L78 2'/%3E%3Cpath d='M40 4 L40 8 M40 72 L40 76 M4 40 L8 40 M72 40 L76 40'/%3E%3C/g%3E%3C/svg%3E");
+    /* WhatsApp Dark Doodle Wallpaper */
+    background-color: #0c1317;
+    background-image: url("/wa-doodle-pattern-dark.svg");
     background-repeat: repeat;
-    background-size: 80px 80px;
+    background-size: 380px 380px;
+    background-attachment: fixed;
   }
-  /* Light mode body text adjustments */
+  /* Light mode body: WhatsApp chat beige with authentic scattered doodles */
   html.light body {
-    color: hsl(222 47% 15%);
-    text-shadow: none;
-    /* Lighter doodle for light theme */
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='none' stroke='%23408090' stroke-width='0.8' stroke-linecap='round' stroke-linejoin='round' opacity='0.08'%3E%3Ccircle cx='20' cy='20' r='7'/%3E%3Ccircle cx='60' cy='60' r='7'/%3E%3Ccircle cx='20' cy='60' r='4'/%3E%3Ccircle cx='60' cy='20' r='4'/%3E%3Cpath d='M36 24 Q40 16 44 24 Q48 32 44 36 Q40 40 36 36 Q32 32 36 24z'/%3E%3Cpath d='M36 56 Q40 48 44 56 Q48 64 44 68 Q40 72 36 68 Q32 64 36 56z'/%3E%3Ccircle cx='40' cy='40' r='2.5'/%3E%3Cpath d='M12 40 Q16 36 20 40 Q24 44 20 48 Q16 52 12 48 Q8 44 12 40z'/%3E%3Cpath d='M60 40 Q64 36 68 40 Q72 44 68 48 Q64 52 60 48 Q56 44 60 40z'/%3E%3Cpath d='M2 2 L6 6 M74 74 L78 78 M2 78 L6 74 M74 6 L78 2'/%3E%3Cpath d='M40 4 L40 8 M40 72 L40 76 M4 40 L8 40 M72 40 L76 40'/%3E%3C/g%3E%3C/svg%3E");
+    color: #111b21 !important;
+    text-shadow: none !important;
+    background-color: #efeae2 !important;
+    background-image: url("/wa-doodle-pattern-light.svg") !important;
+    background-repeat: repeat !important;
+    background-size: 380px 380px !important;
+    background-attachment: fixed !important;
   }
-  /* Light mode heading and text adjustments */
+  /* Light mode: disable neon glows and blurry text-shadows everywhere */
   html.light h1, html.light h2, html.light h3, html.light h4, html.light h5, html.light h6 {
-    text-shadow: none;
-    color: hsl(222 47% 11%);
+    text-shadow: none !important;
+    color: #111b21 !important;
   }
   html.light p, html.light span, html.light label, html.light a, html.light li,
   html.light td, html.light th, html.light button, html.light input, html.light textarea, html.light select {
-    text-shadow: none;
+    text-shadow: none !important;
   }
-  /* Light mode select */
-  html.light select {
-    color: hsl(222 47% 11%);
-    background-color: hsl(0 0% 100%);
+  /* Light mode cards and panels */
+  html.light .glass-panel {
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
+    backdrop-filter: none !important;
+  }
+  html.light header {
+    background-color: rgba(255, 255, 255, 0.94) !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.04) !important;
+  }
+  html.light aside {
+    border-right: 1px solid #e2e8f0 !important;
+  }
+  html.light .neon-text {
+    color: #111b21 !important;
+    text-shadow: none !important;
+  }
+  html.light .neon-title {
+    background: none !important;
+    -webkit-background-clip: unset !important;
+    background-clip: unset !important;
+    color: #111b21 !important;
+    -webkit-text-fill-color: #111b21 !important;
+    text-shadow: none !important;
+    filter: none !important;
+    animation: none !important;
+  }
+  html.light .neon-subtle {
+    color: #54656f !important;
+    text-shadow: none !important;
+  }
+  html.light .neon-border {
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04) !important;
+  }
+  html.light .neon-run::before,
+  html.light .neon-run::after {
+    display: none !important;
+  }
+  /* In light mode, hide all astral nebulae, auroras and grid */
+  html.light .astral-bg,
+  html.light .astral-aurora,
+  html.light .astral-nebula,
+  html.light .astral-orbit,
+  html.light .astral-stars,
+  html.light .astral-grid,
+  html.light .astral-vignette {
+    display: none !important;
+  }
+  /* Light mode select & input controls */
+  html.light select, html.light input, html.light textarea {
+    color: #111b21 !important;
+    background-color: #ffffff !important;
+    border-color: #cbd5e1 !important;
   }
   html.light select option {
-    color: hsl(222 47% 11%);
-    background-color: hsl(0 0% 100%);
+    color: #111b21 !important;
+    background-color: #ffffff !important;
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
@@ -419,13 +473,7 @@ html.light {
 }
 
 .astral-grid {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(hsl(var(--primary) / 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, hsl(var(--accent) / 0.05) 1px, transparent 1px);
-  background-size: 40px 40px;
-  mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 15%, transparent 72%);
+  display: none !important;
 }
 
 .astral-vignette {

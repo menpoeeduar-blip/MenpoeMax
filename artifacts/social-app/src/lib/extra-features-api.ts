@@ -415,7 +415,7 @@ export function useGetAnalytics() {
           getDocs(query(collection(db, "follows"), where("followerId", "==", uid))),
           getDocs(query(collection(db, "posts"), where("authorId", "==", uid))),
         ]);
-        const myPosts = postsSnap.docs.map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() as Record<string, unknown>) }));
+        const myPosts: any[] = postsSnap.docs.map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() as any) }));
         const likesReceived = myPosts.reduce((sum, item) => sum + (Number(item.likesCount) || 0), 0);
         const viewsReceived = myPosts.reduce((sum, item) => sum + (Number(item.viewsCount) || 0), 0);
         const sharesReceived = myPosts.reduce((sum, item) => sum + (Number(item.sharesCount) || 0), 0);
@@ -423,7 +423,7 @@ export function useGetAnalytics() {
         const engagement = likesReceived + commentsReceived + sharesReceived;
         const weeklyGrowth = Math.min(99, Math.round(5 + Math.sqrt(engagement + myPosts.length) * 3));
         const topPost = [...myPosts].sort(
-          (a, b) => (Number(b.likesCount) || 0) - (Number(a.likesCount) || 0),
+          (a: any, b: any) => (Number(b.likesCount) || 0) - (Number(a.likesCount) || 0),
         )[0];
         return {
           postsCount: myPosts.length,

@@ -175,7 +175,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       ambientTheme === "cyberpunk" ? "bg-[#0c0418]" :
       ambientTheme === "midnight" ? "bg-[#050811]" : "bg-transparent"
     )}>
-      {ambientTheme === "default" && <AstralBackground />}
+      {ambientTheme === "default" && darkMode && <AstralBackground />}
       <header className="fixed top-0 z-50 w-full border-b border-primary/30 bg-background/55 backdrop-blur-xl neon-chrome">
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[2px] overflow-hidden">
           <div className="h-full w-1/3 animate-[neon-line-sweep_2.8s_linear_infinite] bg-gradient-to-r from-transparent via-cyan-400 to-fuchsia-500 shadow-[0_0_12px_#22d3ee]" />

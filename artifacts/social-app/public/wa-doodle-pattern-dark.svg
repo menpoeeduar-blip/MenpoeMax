@@ -1,0 +1,160 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <g fill="none" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.09">
+    <!-- 1. Chat bubble with dots (top left) -->
+    <path d="M30 45 C30 35 40 28 55 28 C70 28 80 35 80 45 C80 55 70 62 55 62 C50 62 44 60 40 63 L34 66 L36 60 C32 56 30 51 30 45 Z"/>
+    <circle cx="46" cy="45" r="1.5" fill="#ffffff"/>
+    <circle cx="55" cy="45" r="1.5" fill="#ffffff"/>
+    <circle cx="64" cy="45" r="1.5" fill="#ffffff"/>
+
+    <!-- 2. Coffee mug with steam (top center-left) -->
+    <path d="M125 35 L125 55 C125 62 131 66 138 66 L150 66 C157 66 163 62 163 55 L163 35 Z"/>
+    <path d="M163 40 C170 40 173 44 173 48 C173 53 168 55 163 55"/>
+    <path d="M136 28 C136 24 139 22 137 18"/>
+    <path d="M146 28 C146 24 149 22 147 18"/>
+    <path d="M154 28 C154 24 157 22 155 18"/>
+
+    <!-- 3. Game controller (top center-right) -->
+    <path d="M225 45 C220 40 220 32 228 30 C236 28 244 32 250 35 C256 32 264 28 272 30 C280 32 280 40 275 45 L278 58 C280 64 274 68 268 66 L258 58 L242 58 L232 66 C226 68 220 64 222 58 Z"/>
+    <path d="M233 42 L233 48 M230 45 L236 45"/>
+    <circle cx="264" cy="42" r="1.5" fill="#ffffff"/>
+    <circle cx="270" cy="47" r="1.5" fill="#ffffff"/>
+
+    <!-- 4. Paper airplane (top right) -->
+    <path d="M330 30 L380 45 L350 78 L342 62 L330 30 Z"/>
+    <path d="M380 45 L342 62"/>
+    <path d="M342 62 L345 74 L355 68"/>
+
+    <!-- 5. Sun with rays (upper center-mid) -->
+    <circle cx="195" cy="95" r="10"/>
+    <path d="M195 78 L195 82 M195 108 L195 112 M178 95 L182 95 M208 95 L212 95 M183 83 L186 86 M204 104 L207 107 M183 107 L186 104 M204 86 L207 83"/>
+
+    <!-- 6. Camera (mid left) -->
+    <rect x="25" y="115" width="45" height="34" rx="6"/>
+    <path d="M38 115 L43 108 L52 108 L57 115"/>
+    <circle cx="47" cy="132" r="9"/>
+    <circle cx="61" cy="123" r="2" fill="#ffffff"/>
+
+    <!-- 7. Musical notes (center-left) -->
+    <ellipse cx="120" cy="145" rx="5" ry="4"/>
+    <ellipse cx="145" cy="138" rx="5" ry="4"/>
+    <path d="M125 145 L125 120 L150 113 L150 138"/>
+    <path d="M125 128 L150 121"/>
+
+    <!-- 8. Heart (center) -->
+    <path d="M235 120 C235 112 242 108 248 112 C255 116 255 122 255 122 C255 122 255 116 262 112 C268 108 275 112 275 120 C275 132 255 145 255 145 C255 145 235 132 235 120 Z"/>
+
+    <!-- 9. Clock (center-right) -->
+    <circle cx="340" cy="125" r="16"/>
+    <path d="M340 114 L340 125 L347 129"/>
+    <path d="M336 105 L344 105"/>
+
+    <!-- 10. Pizza slice (mid-low left) -->
+    <path d="M30 205 L65 220 C62 232 52 238 40 236 L30 205 Z"/>
+    <path d="M65 220 C62 232 52 238 40 236"/>
+    <circle cx="45" cy="216" r="2" fill="#ffffff"/>
+    <circle cx="48" cy="226" r="1.5" fill="#ffffff"/>
+
+    <!-- 11. Light bulb (mid-low center-left) -->
+    <path d="M130 215 C130 203 140 195 150 195 C160 195 170 203 170 215 C170 223 164 227 162 232 L138 232 C136 227 130 223 130 215 Z"/>
+    <path d="M141 232 L141 238 C141 240 143 242 145 242 L155 242 C157 242 159 240 159 238 L159 232"/>
+    <path d="M140 236 L160 236"/>
+    <path d="M145 208 L150 213 L155 208"/>
+
+    <!-- 12. Headphones (mid-low center-right) -->
+    <path d="M230 220 C230 200 245 188 265 188 C285 188 300 200 300 220"/>
+    <rect x="225" y="215" width="10" height="18" rx="4"/>
+    <rect x="295" y="215" width="10" height="18" rx="4"/>
+
+    <!-- 13. Location pin (mid-low right) -->
+    <path d="M350 200 C340 200 332 208 332 218 C332 230 350 245 350 245 C350 245 368 230 368 218 C368 208 360 200 350 200 Z"/>
+    <circle cx="350" cy="216" r="5"/>
+
+    <!-- 14. Smiley face (lower left) -->
+    <circle cx="50" cy="305" r="18"/>
+    <circle cx="44" cy="300" r="2" fill="#ffffff"/>
+    <circle cx="56" cy="300" r="2" fill="#ffffff"/>
+    <path d="M42 310 C45 316 55 316 58 310"/>
+
+    <!-- 15. Bell / Notification (lower center-left) -->
+    <path d="M135 315 C135 303 140 298 150 298 C160 298 165 303 165 315 L168 322 L132 322 Z"/>
+    <circle cx="150" cy="294" r="2.5"/>
+    <path d="M145 322 C145 326 147 328 150 328 C153 328 155 326 155 322"/>
+
+    <!-- 16. Gift box (lower center-right) -->
+    <rect x="235" y="305" width="36" height="30" rx="3"/>
+    <rect x="232" y="297" width="42" height="9" rx="2"/>
+    <path d="M253 297 L253 335"/>
+    <path d="M246 297 C246 290 253 290 253 297 C253 290 260 290 260 297"/>
+
+    <!-- 17. Rocket ship (lower right) -->
+    <path d="M340 330 C340 305 355 290 365 285 C365 295 360 320 345 330 Z"/>
+    <circle cx="354" cy="302" r="3.5"/>
+    <path d="M342 323 L335 328 L340 318"/>
+    <path d="M352 333 L357 340 L347 335"/>
+
+    <!-- 18. Glasses (upper mid-left) -->
+    <circle cx="85" cy="85" r="9"/>
+    <circle cx="115" cy="85" r="9"/>
+    <path d="M94 84 C99 81 101 81 106 84"/>
+    <path d="M76 83 L66 80"/>
+    <path d="M124 83 L134 80"/>
+
+    <!-- 19. Umbrella (upper mid-right) -->
+    <path d="M280 88 C280 72 305 72 305 88 Z"/>
+    <path d="M292 88 L292 100 C292 103 289 104 287 102"/>
+    <path d="M292 72 L292 68"/>
+
+    <!-- 20. Envelope (mid center-right) -->
+    <rect x="290" y="148" width="30" height="20" rx="3"/>
+    <path d="M290 150 L305 161 L320 150"/>
+
+    <!-- 21. Dog paw / footprints (mid center-left) -->
+    <ellipse cx="90" cy="180" rx="6" ry="5"/>
+    <circle cx="82" cy="172" r="2.5" fill="#ffffff"/>
+    <circle cx="89" cy="168" r="2.5" fill="#ffffff"/>
+    <circle cx="97" cy="172" r="2.5" fill="#ffffff"/>
+
+    <!-- 22. Star (bottom left corner) -->
+    <path d="M85 360 L87 366 L93 367 L88 371 L90 377 L85 373 L80 377 L82 371 L77 367 L83 366 Z"/>
+
+    <!-- 23. Key (bottom center) -->
+    <circle cx="190" cy="365" r="7"/>
+    <path d="M197 365 L215 365 L215 371 M209 365 L209 369"/>
+
+    <!-- 24. Thumb up / Like (bottom center-right) -->
+    <path d="M285 365 C285 358 290 353 293 353 C296 353 296 360 296 364 L306 364 C310 364 311 367 310 370 L307 378 C306 380 303 381 300 381 L285 381 Z"/>
+    <rect x="279" y="364" width="6" height="17" rx="1"/>
+
+    <!-- 25. Sparkles, dots, crosses and small filler doodles -->
+    <path d="M15 15 L15 25 M10 20 L20 20"/>
+    <circle cx="95" cy="20" r="1.5" fill="#ffffff"/>
+    <circle cx="185" cy="40" r="1.5" fill="#ffffff"/>
+    <path d="M305 20 L311 20 M308 17 L308 23"/>
+    <circle cx="370" cy="15" r="1.5" fill="#ffffff"/>
+
+    <circle cx="15" cy="80" r="1.5" fill="#ffffff"/>
+    <path d="M170 125 L176 125 M173 122 L173 128"/>
+    <circle cx="205" cy="155" r="1.5" fill="#ffffff"/>
+    <circle cx="380" cy="95" r="2" fill="#ffffff"/>
+    <path d="M320 90 L324 94 M324 90 L320 94"/>
+
+    <circle cx="15" cy="170" r="1.5" fill="#ffffff"/>
+    <path d="M110 205 L116 205 M113 202 L113 208"/>
+    <circle cx="215" cy="245" r="1.5" fill="#ffffff"/>
+    <circle cx="315" cy="245" r="1.5" fill="#ffffff"/>
+    <circle cx="385" cy="180" r="1.5" fill="#ffffff"/>
+
+    <path d="M15 260 L21 260 M18 257 L18 263"/>
+    <circle cx="100" cy="275" r="2" fill="#ffffff"/>
+    <circle cx="195" cy="285" r="1.5" fill="#ffffff"/>
+    <path d="M300 275 L306 275 M303 272 L303 278"/>
+    <circle cx="385" cy="285" r="1.5" fill="#ffffff"/>
+
+    <circle cx="20" cy="360" r="1.5" fill="#ffffff"/>
+    <circle cx="130" cy="370" r="2" fill="#ffffff"/>
+    <path d="M235 365 L241 365 M238 362 L238 368"/>
+    <circle cx="345" cy="375" r="1.5" fill="#ffffff"/>
+    <circle cx="380" cy="355" r="1.5" fill="#ffffff"/>
+    <path d="M365 385 L371 385 M368 382 L368 388"/>
+  </g>
+</svg>
