@@ -23,7 +23,7 @@ import {
   formatBirthdayLabel,
   isBirthdayToday,
 } from "./birthday";
-import { loadAllBusinessPages } from "./extra-features-api";
+import { loadAllBusinessPages, loadExtra, saveExtra } from "./extra-features-api";
 import { userHasAppliedToJob } from "./resume-api";
 import {
   ensureMenpoeReelsInFirestore,
@@ -56,6 +56,9 @@ type AppData = {
   savedPosts: AnyObj[];
   reactions: AnyObj[];
   userAvatars: AnyObj[];
+  pages?: AnyObj[];
+  groups?: AnyObj[];
+  [key: string]: any;
 };
 
 const KEY = "socialhub_data_v1";
@@ -289,7 +292,7 @@ function currentUserId() {
   // Always prioritize the real Firebase session over local dev shortcuts.
   return auth.currentUser?.uid || getDevUserId() || "9c8cnoxhr31nvvjiom";
 }
-function ensureCurrentUser(d: AppData) {
+function ensureCurrentUser(d: AppData): AnyObj {
   const id = currentUserId();
   let u = d.users.find((x) => x.id === id || x.clerkId === id);
   const authEmail = auth.currentUser?.email || `usuario_${id}@local.dev`;
@@ -332,7 +335,7 @@ function ensureCurrentUser(d: AppData) {
   }
   return u;
 }
-function withAuthor(d: AppData, p: AnyObj, meId: string) {
+function withAuthor(d: AppData, p: AnyObj, meId: string): AnyObj {
   const a = d.users.find((u) => u.id === p.authorId) || d.users[0];
   const reaction = d.reactions.find((r) => r.postId === p.id && r.userId === meId)?.reaction ?? null;
   const saved = d.savedPosts.some((s) => s.postId === p.id && s.userId === meId);
@@ -771,7 +774,7 @@ export function useGetFeed(_params?: AnyObj, opts?: AnyObj) {
           getDocs(query(followsCol, where("followerId", "==", me.id))),
         ]);
 
-        const rawItems = postSnap.docs.map((p) => ({ id: p.id, ...(p.data() as AnyObj) }));
+        const rawItems: any[] = postSnap.docs.map((p) => ({ id: p.id, ...(p.data() as AnyObj) }));
         const authorIds = rawItems.map((item) => item.authorId);
         const usersMap = await getCachedUsersMap(authorIds, d);
 
@@ -3042,7 +3045,7 @@ export function useGetSupportTicketsAdmin() {
     queryKey: ["admin-support-tickets"],
     queryFn: async () => {
       const d = loadExtra();
-      return [...d.helpTickets].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+      return [...((d.helpTickets as any[]) || [])].sort((a: any, b: any) => (a.createdAt < b.createdAt ? 1 : -1));
     },
   });
 }
@@ -3052,7 +3055,7 @@ export function useUpdateSupportTicketAdmin() {
   return useMutation({
     mutationFn: async ({ ticketId, status, reply }: { ticketId: string; status: string; reply?: string }) => {
       const d = loadExtra();
-      const ticket = d.helpTickets.find((t) => t.id === ticketId);
+      const ticket = (d.helpTickets as any[] || []).find((t: any) => t.id === ticketId);
       if (ticket) {
         ticket.status = status;
         if (reply) (ticket as AnyObj).adminReply = reply;
@@ -3480,11 +3483,11 @@ export function useSetTyping() {
   });
 }
 
-export function useGetNotifications() {
+export function useGetNotifications(_opts?: { query?: any }) {
   return useQuery({
     queryKey: ["notifications"],
-    refetchInterval: 3000,
-    staleTime: 0,
+    refetchInterval: _opts?.query?.refetchInterval ?? 3000,
+    staleTime: _opts?.query?.staleTime ?? 0,
     queryFn: async () => {
       try {
         const d = load();

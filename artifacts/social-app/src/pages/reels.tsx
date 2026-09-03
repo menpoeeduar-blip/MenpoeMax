@@ -225,7 +225,7 @@ function ReelSlide({
         <p className="text-white text-xs sm:text-sm line-clamp-2 drop-shadow">{post.content}</p>
         {(post.hashtags?.length ?? 0) > 0 && (
           <div className="flex flex-wrap gap-1 mt-1">
-            {post.hashtags.slice(0, 3).map((tag) => (
+            {post.hashtags?.slice(0, 3).map((tag) => (
               <span key={tag} className="text-primary text-xs">#{tag.replace(/^#/, "")}</span>
             ))}
           </div>

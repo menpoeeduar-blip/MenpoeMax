@@ -58,9 +58,10 @@ function JobDetail({
   onBack: () => void;
   backLabel: string;
 }) {
-  const { data: job, isLoading } = useGetJob(jobId, {
+  const { data: rawJob, isLoading } = useGetJob(jobId, {
     query: { enabled: !!jobId, queryKey: getGetJobQueryKey(jobId) },
   });
+  const job: any = rawJob;
   const saveJob = useSaveJob();
   const qc = useQueryClient();
   const [showApply, setShowApply] = useState(false);
@@ -198,7 +199,7 @@ function JobDetail({
         <div className="glass-panel rounded-2xl p-6 mb-4">
           <h2 className="font-semibold mb-3 neon-text">Requisitos mínimos</h2>
           <ul className="space-y-2">
-            {job.requirements?.map((req, i) => (
+            {job.requirements?.map((req: any, i: any) => (
               <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
                 <Star className="w-4 h-4 text-primary flex-none mt-0.5" />
                 {req}

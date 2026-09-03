@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { collection, doc, getDoc, getDocs, setDoc, query, where } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, setDoc, deleteDoc, query, where } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import { getDevUserId } from "./queryClient";
 import {
@@ -28,7 +28,7 @@ function empty(): ExtraData {
   return { albums: [], albumPhotos: [], privacy: {}, helpTickets: [], businessPages: [], communityMeta: [], credits: {}, boostedPosts: [] };
 }
 
-function loadExtra(): ExtraData {
+export function loadExtra(): ExtraData {
   try {
     const raw = localStorage.getItem(KEY);
     return raw ? { ...empty(), ...JSON.parse(raw) } : empty();
@@ -37,7 +37,7 @@ function loadExtra(): ExtraData {
   }
 }
 
-function saveExtra(d: ExtraData) {
+export function saveExtra(d: ExtraData) {
   localStorage.setItem(KEY, JSON.stringify(d));
 }
 

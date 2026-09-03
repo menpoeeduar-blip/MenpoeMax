@@ -261,7 +261,7 @@ function CreateListingModal({ onClose }: { onClose: () => void }) {
               </label>
               <FormSelect
                 value={form.category}
-                onValueChange={(v) => setForm((f) => ({ ...f, category: v }))}
+                onValueChange={(v) => setForm((f) => ({ ...f, category: v as any }))}
                 options={MARKETPLACE_CATEGORIES.map((c) => ({ value: c.id, label: c.name }))}
               />
             </div>
@@ -719,7 +719,7 @@ function ListingDetail({
     <div className="max-w-3xl mx-auto w-full pb-16 space-y-6">
       {showEditModal && <EditListingModal listing={listing} onClose={() => setShowEditModal(false)} />}
       {showShareModal && (
-        <MarketplaceShareModal open onClose={() => setShowShareModal(false)} listing={listing} />
+        <MarketplaceShareModal open onClose={() => setShowShareModal(false)} listing={listing as any} />
       )}
 
       <button

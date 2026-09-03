@@ -159,8 +159,8 @@ export function useGetWalletTransactions() {
         );
         if (!snap.empty) {
           return snap.docs
-            .map((d) => ({ id: d.id, ...(d.data() as object) }))
-            .sort((a, b) => ((a as { createdAt: string }).createdAt < (b as { createdAt: string }).createdAt ? 1 : -1));
+            .map((d) => ({ id: d.id, ...(d.data() as any) }))
+            .sort((a: any, b: any) => (a.createdAt < b.createdAt ? 1 : -1));
         }
       }
       const extra = loadWalletExtra();
@@ -334,7 +334,7 @@ export function useSendStreamGift() {
       };
 
       const extra = loadWalletExtra();
-      extra.postGifts.unshift(record);
+      extra.postGifts.unshift(record as any);
       saveWalletExtra({ postGifts: extra.postGifts });
 
       if (canUseFirestoreWallet()) {
@@ -360,8 +360,8 @@ export function useGetPostGifts(postId: string) {
         const snap = await getDocs(query(postGiftsCol, where("postId", "==", postId), limit(30)));
         if (!snap.empty) {
           return snap.docs
-            .map((d) => ({ id: d.id, ...(d.data() as object) }))
-            .sort((a, b) => ((a as { createdAt: string }).createdAt < (b as { createdAt: string }).createdAt ? 1 : -1));
+            .map((d) => ({ id: d.id, ...(d.data() as any) }))
+            .sort((a: any, b: any) => (a.createdAt < b.createdAt ? 1 : -1));
         }
       }
       const extra = loadWalletExtra();
@@ -378,8 +378,8 @@ export function useGetPendingTopUps() {
       if (canUseFirestoreWallet()) {
         const snap = await getDocs(query(topUpsCol, where("status", "==", "pending")));
         return snap.docs
-          .map((d) => ({ id: d.id, ...(d.data() as object) }))
-          .sort((a, b) => ((a as { createdAt: string }).createdAt < (b as { createdAt: string }).createdAt ? 1 : -1));
+          .map((d) => ({ id: d.id, ...(d.data() as any) }))
+          .sort((a: any, b: any) => (a.createdAt < b.createdAt ? 1 : -1));
       }
       const extra = loadWalletExtra();
       return extra.walletTopUps.filter((t) => t.status === "pending");
@@ -407,7 +407,7 @@ export function useAdminReviewTopUp() {
       let record = topUp;
       if (!record && canUseFirestoreWallet()) {
         const snap = await getDoc(doc(db, "walletTopUps", topUpId));
-        if (snap.exists()) record = { id: snap.id, ...(snap.data() as typeof topUp) };
+        if (snap.exists()) record = { id: snap.id, ...(snap.data() as any) };
       }
       if (!record || record.status !== "pending") throw new Error("Solicitud no encontrada");
 

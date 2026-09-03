@@ -91,7 +91,25 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const { user } = useUser();
   const { signOut } = useClerk();
-  const [darkMode, setDarkMode] = useState(true);
+
+  // ─── Light / Dark Theme ────────────────────────────────────────────────────
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    const saved = typeof window !== "undefined" ? localStorage.getItem("menpoe_theme") : null;
+    return saved !== "light"; // default dark
+  });
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.remove("light");
+      localStorage.setItem("menpoe_theme", "dark");
+    } else {
+      document.documentElement.classList.add("light");
+      localStorage.setItem("menpoe_theme", "light");
+    }
+  }, [darkMode]);
+
+  const toggleTheme = () => setDarkMode((d) => !d);
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { data: _unreadCountRaw } = useGetUnreadNotificationsCount();
   const notifCount = typeof _unreadCountRaw === "number" ? _unreadCountRaw : 0;
@@ -242,8 +260,13 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 <span className="hidden sm:inline">Silencio</span>
               </span>
             )}
-            <button onClick={() => setDarkMode(!darkMode)} className="h-9 w-9 rounded-full glass-panel neon-border flex items-center justify-center">
-              {darkMode ? <Sun className="w-4 h-4 text-primary" /> : <Moon className="w-4 h-4" />}
+            <button
+              onClick={toggleTheme}
+              className="h-9 w-9 rounded-full glass-panel neon-border flex items-center justify-center transition-all hover:scale-105"
+              title={darkMode ? "Cambiar a tema claro" : "Cambiar a tema oscuro"}
+              aria-label="Cambiar tema"
+            >
+              {darkMode ? <Sun className="w-4 h-4 text-yellow-400" /> : <Moon className="w-4 h-4 text-primary" />}
             </button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

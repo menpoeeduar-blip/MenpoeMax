@@ -441,9 +441,9 @@ const PostCardInner = memo(function PostCardInner({ post, showComments: initialS
               </Link>
             )}
             {post.author?.isVerified && <CheckCircle className="w-3.5 h-3.5 text-primary flex-none" />}
-            {post.authorType === "page" && <Building2 className="w-3 h-3 text-emerald-400 flex-none" title="Página" />}
-            {post.authorType === "group" && <UsersIcon className="w-3 h-3 text-violet-400 flex-none" title="Grupo" />}
-            {post.authorType === "community" && <Globe className="w-3 h-3 text-sky-400 flex-none" title="Comunidad" />}
+            {post.authorType === "page" && <span title="Página"><Building2 className="w-3 h-3 text-emerald-400 flex-none" /></span>}
+            {post.authorType === "group" && <span title="Grupo"><UsersIcon className="w-3 h-3 text-violet-400 flex-none" /></span>}
+            {post.authorType === "community" && <span title="Comunidad"><Globe className="w-3 h-3 text-sky-400 flex-none" /></span>}
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
             <span>hace {timeAgo}</span>

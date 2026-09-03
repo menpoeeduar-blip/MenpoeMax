@@ -864,7 +864,7 @@ export default function Messages() {
         c.participantIds?.includes(convId) || c.participants?.some((p: any) => p.id === convId)
       );
       if (userMatch) {
-        setActiveConvId(userMatch.id);
+        setActiveConvId((userMatch as any).id);
         return;
       }
       setActiveConvId(convId);
@@ -873,7 +873,7 @@ export default function Messages() {
         c.participantIds?.includes(targetUserId) || c.participants?.some((p: any) => p.id === targetUserId)
       );
       if (userMatch) {
-        setActiveConvId(userMatch.id);
+        setActiveConvId((userMatch as any).id);
       }
     }
   }, [location, conversations]);

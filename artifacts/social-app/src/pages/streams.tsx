@@ -208,7 +208,7 @@ function StreamViewer({ streamId, onBack }: { streamId: string; onBack: () => vo
           <LiveChatPanel
             streamId={streamId}
             userId={me.id}
-            displayName={me.displayName || "Usuario"}
+            displayName={(me as any)?.displayName || "Usuario"}
             hostId={stream.hostId}
             hostName={host?.displayName || "Anfitrión"}
           />
@@ -292,7 +292,7 @@ export default function Streams() {
                       </Button>
                     </div>
                   )
-                  : streams?.map((stream) => (
+                  : streams?.map((stream: any) => (
                     <button
                       key={stream.id}
                       type="button"

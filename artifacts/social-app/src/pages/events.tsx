@@ -341,9 +341,10 @@ function CreateEventModal({ onClose }: { onClose: () => void }) {
 }
 
 function EventDetail({ eventId, onBack }: { eventId: string; onBack: () => void }) {
-  const { data: event, isLoading } = useGetEvent(eventId, {
+  const { data: rawEvent, isLoading } = useGetEvent(eventId, {
     query: { enabled: !!eventId, queryKey: getGetEventQueryKey(eventId) },
   });
+  const event: any = rawEvent;
   const { data: me } = useGetMe();
   const { data: updates = [] } = useGetEventUpdates(eventId);
 

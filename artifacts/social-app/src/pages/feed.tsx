@@ -3,15 +3,19 @@ import { Shell } from "@/components/layout/Shell";
 import {
   useGetFeed,
   useGetStories,
+  getGetStoriesQueryKey,
   useGetMe,
   useCreateStory,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  FileText, Plus,
+  FileText, Plus, Image as ImageIcon, X, ArrowLeft, ArrowRight,
 } from "lucide-react";
 import { uploadFile, LOCAL_STORAGE_BUDGET_HINT } from "@/lib/upload";
 import { BirthdayFeedBanner } from "@/components/BirthdayFeedBanner";
@@ -107,7 +111,7 @@ function StoryCreator({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
+    <Dialog open onOpenChange={(open: boolean) => !open && onClose()}>
       <DialogContent className="sm:max-w-md bg-card border-border">
         <DialogHeader>
           <DialogTitle>Agregar historia</DialogTitle>
@@ -133,7 +137,7 @@ function StoryCreator({ onClose }: { onClose: () => void }) {
             <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleSelect} />
             {!preview ? (
               <button onClick={() => fileInputRef.current?.click()} className="w-full h-48 rounded-xl border-2 border-dashed border-border hover:border-primary/50 flex flex-col items-center justify-center gap-2 transition-colors bg-white/5">
-                <Image className="w-10 h-10 text-muted-foreground" />
+                <ImageIcon className="w-10 h-10 text-muted-foreground" />
                 <span className="text-sm text-muted-foreground">Haz clic para subir foto o video</span>
               </button>
             ) : (
@@ -176,7 +180,7 @@ function StoryCreator({ onClose }: { onClose: () => void }) {
 
             <Textarea
               value={textStory}
-              onChange={(e) => setTextStory(e.target.value.slice(0, 160))}
+              onChange={(e: any) => setTextStory(e.target.value.slice(0, 160))}
               placeholder="¿Qué quieres compartir hoy?"
               className="min-h-[80px] bg-white/5 border-border/30 rounded-xl resize-none text-sm"
             />
@@ -235,7 +239,7 @@ function StoryViewer({ group, onClose }: { group: any; onClose: () => void }) {
   };
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
+    <Dialog open onOpenChange={(open: boolean) => !open && onClose()}>
       <DialogContent className="sm:max-w-md bg-black/95 border-none p-0 overflow-hidden select-none">
         <div className="relative aspect-[9/16] w-full flex flex-col justify-between p-4">
           {/* Progress Indicators */}
@@ -302,7 +306,8 @@ function StoryViewer({ group, onClose }: { group: any; onClose: () => void }) {
 export default function Feed() {
   const [feedMode, setFeedMode] = useState<"para_ti" | "siguiendo">("para_ti");
   const feedParams = feedMode === "siguiendo" ? { following: true } : undefined;
-  const { data: postsData, isPending: feedPending } = useGetFeed(feedParams);
+  const { data: rawPostsData, isPending: feedPending } = useGetFeed(feedParams);
+  const postsData: any = rawPostsData;
   const { data: stories, isLoading: storiesLoading } = useGetStories();
   const { data: me } = useGetMe();
   const { user: clerkUser } = useUser();
@@ -332,7 +337,7 @@ export default function Feed() {
   }, []);
 
   const visiblePosts = useMemo(
-    () => (postsData?.posts ?? []).filter((p) => !blockedUsers.includes(p.authorId)),
+    () => (postsData?.posts ?? []).filter((p: any) => !blockedUsers.includes(p.authorId)),
     [postsData?.posts, blockedUsers],
   );
 
@@ -340,7 +345,7 @@ export default function Feed() {
 
   useEffect(() => {
     const postId = new URLSearchParams(window.location.search).get("post");
-    if (!postId || showFeedSkeleton) return;
+    if (!postId || showFeedSkeleton) return undefined;
     const el = document.getElementById(`post-${postId}`);
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -349,6 +354,7 @@ export default function Feed() {
       const t = window.setTimeout(() => el.classList.remove("ring-2", "ring-primary"), 3000);
       return () => window.clearTimeout(t);
     }
+    return undefined;
   }, [showFeedSkeleton, visiblePosts.length]);
 
   return (
@@ -403,7 +409,7 @@ export default function Feed() {
                     <p className="text-sm text-muted-foreground">Sigue personas y comunidades para ver sus publicaciones aquí</p>
                   </div>
                 )
-                : visiblePosts.map((post) => (
+                : visiblePosts.map((post: any) => (
                   <PostCard
                     key={post.id}
                     post={post}

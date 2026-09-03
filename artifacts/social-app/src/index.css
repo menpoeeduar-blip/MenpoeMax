@@ -32,6 +32,7 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* ── Dark Mode (default) ─────────────────────────────────────────────────── */
 :root, .dark {
   --background: 260 65% 4%;
   --foreground: 210 50% 98%;
@@ -53,8 +54,38 @@
   --destructive: 0 72% 48%;
   --destructive-foreground: 0 0% 98%;
   --radius: 0.75rem;
+  /* WhatsApp doodle variables - dark mode */
+  --wa-doodle-opacity: 0.038;
+  --wa-doodle-color: 255 255 255;
 }
 
+/* ── Light Mode ──────────────────────────────────────────────────────────── */
+html.light {
+  --background: 220 20% 96%;
+  --foreground: 222 47% 11%;
+  --border: 220 20% 78%;
+  --input: 220 15% 90%;
+  --ring: 195 80% 44%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+  --primary: 195 80% 44%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 14% 88%;
+  --secondary-foreground: 222 47% 11%;
+  --muted: 220 14% 90%;
+  --muted-foreground: 220 10% 46%;
+  --accent: 280 60% 55%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 72% 48%;
+  --destructive-foreground: 0 0% 98%;
+  /* WhatsApp doodle variables - light mode */
+  --wa-doodle-opacity: 0.055;
+  --wa-doodle-color: 80 120 140;
+}
+
+/* WhatsApp doodle SVG pattern — inline data URI tiled background */
 @layer base {
   * { @apply border-border; }
   html, body, #root {
@@ -67,6 +98,35 @@
     @apply font-sans antialiased bg-background;
     color: hsl(195 88% 86%);
     text-shadow: 0 0 8px hsl(var(--primary) / 0.28), 0 0 14px hsl(var(--accent) / 0.12);
+    /* WhatsApp-style doodle tiled background */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='none' stroke='%23ffffff' stroke-width='0.8' stroke-linecap='round' stroke-linejoin='round' opacity='0.06'%3E%3Ccircle cx='20' cy='20' r='7'/%3E%3Ccircle cx='60' cy='60' r='7'/%3E%3Ccircle cx='20' cy='60' r='4'/%3E%3Ccircle cx='60' cy='20' r='4'/%3E%3Cpath d='M36 24 Q40 16 44 24 Q48 32 44 36 Q40 40 36 36 Q32 32 36 24z'/%3E%3Cpath d='M36 56 Q40 48 44 56 Q48 64 44 68 Q40 72 36 68 Q32 64 36 56z'/%3E%3Ccircle cx='40' cy='40' r='2.5'/%3E%3Cpath d='M12 40 Q16 36 20 40 Q24 44 20 48 Q16 52 12 48 Q8 44 12 40z'/%3E%3Cpath d='M60 40 Q64 36 68 40 Q72 44 68 48 Q64 52 60 48 Q56 44 60 40z'/%3E%3Cpath d='M2 2 L6 6 M74 74 L78 78 M2 78 L6 74 M74 6 L78 2'/%3E%3Cpath d='M40 4 L40 8 M40 72 L40 76 M4 40 L8 40 M72 40 L76 40'/%3E%3C/g%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 80px 80px;
+  }
+  /* Light mode body text adjustments */
+  html.light body {
+    color: hsl(222 47% 15%);
+    text-shadow: none;
+    /* Lighter doodle for light theme */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='none' stroke='%23408090' stroke-width='0.8' stroke-linecap='round' stroke-linejoin='round' opacity='0.08'%3E%3Ccircle cx='20' cy='20' r='7'/%3E%3Ccircle cx='60' cy='60' r='7'/%3E%3Ccircle cx='20' cy='60' r='4'/%3E%3Ccircle cx='60' cy='20' r='4'/%3E%3Cpath d='M36 24 Q40 16 44 24 Q48 32 44 36 Q40 40 36 36 Q32 32 36 24z'/%3E%3Cpath d='M36 56 Q40 48 44 56 Q48 64 44 68 Q40 72 36 68 Q32 64 36 56z'/%3E%3Ccircle cx='40' cy='40' r='2.5'/%3E%3Cpath d='M12 40 Q16 36 20 40 Q24 44 20 48 Q16 52 12 48 Q8 44 12 40z'/%3E%3Cpath d='M60 40 Q64 36 68 40 Q72 44 68 48 Q64 52 60 48 Q56 44 60 40z'/%3E%3Cpath d='M2 2 L6 6 M74 74 L78 78 M2 78 L6 74 M74 6 L78 2'/%3E%3Cpath d='M40 4 L40 8 M40 72 L40 76 M4 40 L8 40 M72 40 L76 40'/%3E%3C/g%3E%3C/svg%3E");
+  }
+  /* Light mode heading and text adjustments */
+  html.light h1, html.light h2, html.light h3, html.light h4, html.light h5, html.light h6 {
+    text-shadow: none;
+    color: hsl(222 47% 11%);
+  }
+  html.light p, html.light span, html.light label, html.light a, html.light li,
+  html.light td, html.light th, html.light button, html.light input, html.light textarea, html.light select {
+    text-shadow: none;
+  }
+  /* Light mode select */
+  html.light select {
+    color: hsl(222 47% 11%);
+    background-color: hsl(0 0% 100%);
+  }
+  html.light select option {
+    color: hsl(222 47% 11%);
+    background-color: hsl(0 0% 100%);
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);

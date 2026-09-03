@@ -39,14 +39,20 @@ export default function Explore() {
   });
   const [activeTab, setActiveTab] = useState<"trending" | "people" | "topics" | "communities">("trending");
 
-  const { data: trendingPosts, isLoading: trendingLoading } = useGetTrendingPosts();
-  const { data: suggestedUsers } = useGetSuggestedUsers();
-  const { data: suggestedCommunities } = useGetSuggestedCommunities();
-  const { data: trendingTopics } = useGetTrendingTopics();
-  const { data: searchResults, isLoading: searchLoading } = useSearchGlobal(
+  const { data: rawTrendingPosts, isLoading: trendingLoading } = useGetTrendingPosts();
+  const { data: rawSuggestedUsers } = useGetSuggestedUsers();
+  const { data: rawSuggestedCommunities } = useGetSuggestedCommunities();
+  const { data: rawTrendingTopics } = useGetTrendingTopics();
+  const { data: rawSearchResults, isLoading: searchLoading } = useSearchGlobal(
     { q: query },
     { query: { enabled: query.length > 1, queryKey: getSearchGlobalQueryKey({ q: query }) } }
   );
+
+  const trendingPosts: any = rawTrendingPosts;
+  const suggestedUsers: any = rawSuggestedUsers;
+  const suggestedCommunities: any = rawSuggestedCommunities;
+  const trendingTopics: any = rawTrendingTopics;
+  const searchResults: any = rawSearchResults;
 
   const likePost = useLikePost();
   const followUser = useFollowUser();
@@ -161,7 +167,7 @@ export default function Explore() {
                 {(searchResults.users?.length ?? 0) > 0 && (
                   <div className="px-4 py-2 border-b border-border/30 text-xs font-medium text-muted-foreground uppercase tracking-wider">Perfiles</div>
                 )}
-                {(searchResults.users?.length ?? 0) > 0 && searchResults.users.map((user) => (
+                {(searchResults.users?.length ?? 0) > 0 && searchResults.users.map((user: any) => (
                   <div key={user.id} className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors">
                     <Link href={`/profile/${user.id}`}>
                       <img src={user.avatarUrl ?? `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`} className="w-10 h-10 rounded-full object-cover bg-muted cursor-pointer" alt="" />
@@ -213,7 +219,7 @@ export default function Explore() {
                 {(searchResults.communities?.length ?? 0) === 0 ? (
                   <div className="px-4 py-3 text-sm text-muted-foreground">Sin grupos encontrados.</div>
                 ) : (
-                  searchResults.communities.map((community) => (
+                  searchResults.communities.map((community: any) => (
                     <Link key={community.id} href={`/communities/${community.id}`}>
                       <div className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors cursor-pointer">
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent text-white flex items-center justify-center font-bold">
@@ -272,7 +278,7 @@ export default function Explore() {
           <div className="space-y-4">
             {trendingLoading
               ? [...Array(4)].map((_, i) => <div key={i} className="h-40 glass-panel rounded-2xl animate-pulse" />)
-              : trendingPosts?.map((post) => (
+              : trendingPosts?.map((post: any) => (
                 <div key={post.id} className="glass-panel rounded-2xl p-4" data-testid={`card-post-${post.id}`}>
                   <div className="flex items-center gap-3 mb-3">
                     <Link href={`/profile/${post.author.id}`}>
@@ -300,7 +306,7 @@ export default function Explore() {
 
         {activeTab === "people" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {suggestedUsers?.map((user) => (
+            {suggestedUsers?.map((user: any) => (
               <div key={user.id} className="glass-panel rounded-2xl p-5 flex flex-col items-center text-center gap-3" data-testid={`card-user-${user.id}`}>
                 <Link href={`/profile/${user.id}`}>
                   <img src={user.avatarUrl ?? `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`} className="w-16 h-16 rounded-full object-cover bg-muted cursor-pointer" alt="" />
@@ -364,7 +370,7 @@ export default function Explore() {
 
         {activeTab === "topics" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {trendingTopics?.map((topic, i) => (
+            {trendingTopics?.map((topic: any, i: any) => (
               <div key={topic.topic} className={`glass-panel rounded-2xl p-5 border bg-gradient-to-br ${TREND_COLORS[i % TREND_COLORS.length]}`} data-testid={`card-topic-${i}`}>
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp className="w-4 h-4 text-muted-foreground" />
@@ -379,7 +385,7 @@ export default function Explore() {
 
         {activeTab === "communities" && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {suggestedCommunities?.map((community) => (
+            {suggestedCommunities?.map((community: any) => (
               <div key={community.id} className="glass-panel rounded-2xl overflow-hidden" data-testid={`card-community-${community.id}`}>
                 <div className="h-20 bg-gradient-to-br from-primary/20 to-accent/20 relative">
                   <div className="absolute -bottom-6 left-4">

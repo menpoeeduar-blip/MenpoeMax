@@ -77,10 +77,11 @@ export default function Profile() {
   const isOwnProfile = me && (me.id === userId || me.clerkId === userId);
   const targetUserId = isOwnProfile ? me.id : userId;
 
-  const { data: profile, isLoading } = useGetUser(
+  const { data: rawProfile, isLoading } = useGetUser(
     targetUserId,
     { query: { enabled: !!targetUserId, queryKey: getGetUserQueryKey(targetUserId) } }
   );
+  const profile: any = rawProfile;
   const { data: userPosts, isLoading: postsLoading } = useGetUserPosts(targetUserId, {
     query: { enabled: !!targetUserId, queryKey: getGetUserPostsQueryKey(targetUserId) },
   });
@@ -371,7 +372,7 @@ export default function Profile() {
     });
   };
 
-  const displayProfile = profile ?? (isOwnProfile ? me : null);
+  const displayProfile: any = profile ?? (isOwnProfile ? me : null);
 
   const normalizedUserId = (userId || "").trim().toLowerCase();
   useEffect(() => {
@@ -833,7 +834,7 @@ export default function Profile() {
               ) : (
                 <div className="space-y-4">
                   {(userPosts ?? []).map((post) => (
-                    <PostCard key={post.id} post={post} />
+                    <PostCard key={post.id} post={post as any} />
                   ))}
                 </div>
               )}
