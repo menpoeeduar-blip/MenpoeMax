@@ -534,7 +534,7 @@ async function uniqueUsername(base: string, uid: string) {
   }
 }
 
-async function ensureCurrentUserInFirestore(d: AppData) {
+async function ensureCurrentUserInFirestore(d: AppData): Promise<AnyObj> {
   if (!auth.currentUser) return ensureCurrentUser(d);
 
   const uid = auth.currentUser.uid;
@@ -1306,7 +1306,7 @@ export function useGetComments(postId: string, opts?: AnyObj) {
     queryFn: async () => {
       const d = load();
 
-      const attachAuthor = (comment: AnyObj, users: Map<string, AnyObj> | null) => {
+      const attachAuthor = (comment: AnyObj, users: Map<string, AnyObj> | null): AnyObj => {
         const author =
           (users?.get(comment.authorId) as AnyObj | undefined) ||
           d.users.find((u) => u.id === comment.authorId) ||
@@ -1451,7 +1451,7 @@ export function useGetStories() {
           viewsByStory.set(row.storyId, set);
         });
 
-        const activeStories = storiesSnap.docs
+        const activeStories: AnyObj[] = storiesSnap.docs
           .map((s) => ({ id: s.id, ...(s.data() as AnyObj) }))
           .filter((s) => isStoryActive(s));
 
@@ -1659,7 +1659,7 @@ export function useGetReels() {
         const savedIds = new Set<string>();
         savedSnap.forEach((s) => savedIds.add(s.data().postId));
 
-        const reels = postSnap.docs
+        const reels: AnyObj[] = postSnap.docs
           .map((p) => ({ id: p.id, ...(p.data() as AnyObj) }))
           .filter((p) => p.postType === "reel" && Array.isArray(p.mediaUrls) && p.mediaUrls.length > 0)
           .filter((p) => p.isMenpoeSeed || canViewPost(p, me.id, new Set(), new Set()))
@@ -1685,7 +1685,7 @@ export function useGetReels() {
         return { posts: reels };
       }
 
-      const reels = d.posts
+      const reels: AnyObj[] = d.posts
         .filter((p) => p.postType === "reel")
         .map((p) => {
           const mediaUrl = resolveReelMediaUrl(p);
@@ -1756,11 +1756,11 @@ export function useSearchGlobal(params?: AnyObj, opts?: AnyObj) {
           if (row.userId === currentUserId()) joined.add(row.communityId);
         });
 
-        const users = usersSnap.docs
+        const users: AnyObj[] = usersSnap.docs
           .map((u) => ({ id: u.id, ...(u.data() as AnyObj) }))
           .filter((u) => (u.displayName || "").toLowerCase().includes(q) || (u.username || "").toLowerCase().includes(q))
           .map((u) => ({ ...u, isFollowing: following.has(u.id) }));
-        const communities = communitiesSnap.docs
+        const communities: AnyObj[] = communitiesSnap.docs
           .map((c) => ({ id: c.id, ...(c.data() as AnyObj) }))
           .filter(
             (c) =>
@@ -1780,11 +1780,11 @@ export function useSearchGlobal(params?: AnyObj, opts?: AnyObj) {
         const postSnap = await getDocs(postsCol);
         const meId = currentUserId();
         const friendIds = getFriendIds(d, meId);
-        const posts = postSnap.docs
+        const posts: AnyObj[] = postSnap.docs
           .map((p) => ({ id: p.id, ...(p.data() as AnyObj) }))
           .filter((p) => (p.content || "").toLowerCase().includes(q))
           .filter((p) => canViewPost(p, meId, following, friendIds));
-        const jobs = (await getDocs(jobsCol)).docs
+        const jobs: AnyObj[] = (await getDocs(jobsCol)).docs
           .map((j) => ({ id: j.id, ...(j.data() as AnyObj) }))
           .filter(
             (j) =>
@@ -2032,8 +2032,8 @@ export function useGetJobs(params?: AnyObj) {
           if (params?.remote) return j.isRemote || j.workMode === "remote";
           return true;
         });
-      const withMeta = await Promise.all(
-        filtered.map(async (j) => ({
+      const withMeta: AnyObj[] = await Promise.all(
+        filtered.map(async (j: AnyObj): Promise<AnyObj> => ({
           ...j,
           isSaved: d.savedJobs.some((s) => s.jobId === j.id && s.userId === meId),
           hasApplied: await userHasAppliedToJob(j.id, meId),
@@ -2149,7 +2149,7 @@ export function useGetSavedJobs() {
         snap.forEach((s) => ids.push((s.data() as { jobId: string }).jobId));
         ids = [...new Set(ids)];
         const jobsSnap = await getDocs(jobsCol);
-        const byId = new Map(jobsSnap.docs.map((j) => [j.id, { id: j.id, ...(j.data() as AnyObj) }]));
+        const byId = new Map<string, AnyObj>(jobsSnap.docs.map((j) => [j.id, { id: j.id, ...(j.data() as AnyObj) }]));
         (d.jobs || []).forEach((j) => {
           if (!byId.has(j.id)) byId.set(j.id, j);
         });
@@ -3078,7 +3078,7 @@ export function useGetLiveStreams() {
       const d = load();
       if (canUseFirestoreSocial()) {
         const snap = await getDocs(query(streamsCol, where("isLive", "==", true)));
-        const streams = snap.docs.map((s) => ({ id: s.id, ...(s.data() as AnyObj) }));
+        const streams: AnyObj[] = snap.docs.map((s) => ({ id: s.id, ...(s.data() as AnyObj) }));
 
         const hostIds = [...new Set(streams.map((s) => s.hostId).filter(Boolean))];
         const usersSnap = await getDocs(usersCol);
@@ -3154,7 +3154,7 @@ export function useGetStream(id: string, opts?: AnyObj) {
       if (canUseFirestoreSocial()) {
         const snap = await getDoc(doc(db, "streams", id));
         if (!snap.exists()) return undefined;
-        const stream = { id: snap.id, ...(snap.data() as AnyObj) };
+        const stream: AnyObj = { id: snap.id, ...(snap.data() as AnyObj) };
         const hostSnap = await getDoc(doc(db, "users", stream.hostId));
         const host = hostSnap.exists() ? { id: hostSnap.id, ...(hostSnap.data() as AnyObj) } : undefined;
         return { ...stream, host };
@@ -3200,7 +3200,7 @@ export function useGetConversations() {
         const convSnap = await getDocs(
           query(collection(db, "conversations"), where("participantIds", "array-contains", meId)),
         );
-        const conversations = convSnap.docs.map((c) => ({ id: c.id, ...(c.data() as AnyObj) }));
+        const conversations: AnyObj[] = convSnap.docs.map((c) => ({ id: c.id, ...(c.data() as AnyObj) }));
 
         const otherIds = new Set<string>();
         for (const c of conversations) {
@@ -3221,7 +3221,7 @@ export function useGetConversations() {
           }),
         );
 
-        return conversations
+        return (conversations
           .map((c) => {
             const participants = (c.participantIds || [])
               .map((id: string) => (id === meId ? me : users.get(id)))
@@ -3233,8 +3233,8 @@ export function useGetConversations() {
               lastMessage: c.lastMessage || null,
               unreadCount: Number(unreadMap[meId] || 0),
             };
-          })
-          .sort((a, b) => {
+          }) as AnyObj[])
+          .sort((a: any, b: any) => {
             const at = a.lastMessageAt || a.lastMessage?.createdAt || a.createdAt || "";
             const bt = b.lastMessageAt || b.lastMessage?.createdAt || b.createdAt || "";
             return at < bt ? 1 : -1;
@@ -3273,9 +3273,9 @@ export function useListConversationMessages(conversationId: string, opts?: AnyOb
         const msgSnap = await getDocs(
           query(collection(db, "messages"), where("conversationId", "==", conversationId)),
         );
-        const rows = msgSnap.docs
+        const rows: AnyObj[] = msgSnap.docs
           .map((m) => ({ id: m.id, ...(m.data() as AnyObj) }))
-          .sort((a, b) => (a.createdAt > b.createdAt ? 1 : -1));
+          .sort((a: any, b: any) => (a.createdAt > b.createdAt ? 1 : -1));
 
         const senderIds = [...new Set(rows.map((m) => m.senderId).filter(Boolean))];
         const users = new Map<string, AnyObj>();
@@ -3863,8 +3863,8 @@ export function useGetCommunityPosts(communityId: string, opts?: AnyObj) {
         const userSnap = await getDocs(usersCol);
         const users = new Map<string, AnyObj>();
         userSnap.forEach((u) => users.set(u.id, { id: u.id, ...(u.data() as AnyObj) }));
-        const fsPosts = snap.docs.map((p) => {
-          const item = { id: p.id, ...(p.data() as AnyObj) };
+        const fsPosts: AnyObj[] = snap.docs.map((p) => {
+          const item: AnyObj = { id: p.id, ...(p.data() as AnyObj) };
           return {
             ...item,
             author: users.get(item.authorId) || d.users.find((u) => u.id === item.authorId),
@@ -3952,10 +3952,10 @@ export function useGetUserPosts(userId: string, opts?: AnyObj) {
         const savedIds = new Set<string>();
         savedSnap.forEach((s) => savedIds.add((s.data() as AnyObj).postId));
 
-        const posts = postSnap.docs
+        const posts: AnyObj[] = postSnap.docs
           .map((p) => ({ id: p.id, ...(p.data() as AnyObj) }))
           .filter((p) => !p.communityId)
-          .map((item) => {
+          .map((item: AnyObj) => {
             const author = usersMap.get(item.authorId) || me;
             const commentsCount = item.commentsCount || 0;
             const userReaction = reactionsByPost.get(item.id) ?? null;
@@ -4102,7 +4102,7 @@ export function useGetBirthdays() {
         (u) =>
           u.id !== meId &&
           u.birthDate &&
-          canViewBirthDate(u, meId, friendIds),
+          canViewBirthDate(u as any, meId, friendIds),
       );
 
       const today: AnyObj[] = [];
@@ -4201,12 +4201,12 @@ export function useGetMemories() {
         const usersMap = new Map<string, AnyObj>();
         userSnap.forEach((u) => usersMap.set(u.id, { id: u.id, ...(u.data() as AnyObj) }));
 
-        const posts = postSnap.docs
+        const posts: AnyObj[] = postSnap.docs
           .map((p) => ({ id: p.id, ...(p.data() as AnyObj) }))
           .filter((p) => !p.communityId && matchesDay(p.createdAt))
           .filter((p) => p.authorId === meId || friendIds.has(p.authorId) || followingSet.has(p.authorId))
           .filter((p) => canViewPost(p, meId, followingSet, friendIds))
-          .map((p) => ({
+          .map((p: AnyObj) => ({
             ...p,
             author: usersMap.get(p.authorId),
             yearsAgo: year - new Date(p.createdAt).getFullYear(),
@@ -4244,9 +4244,9 @@ export function useGetMyAvatars(opts?: AnyObj) {
       if (canUseFirestoreSocial()) {
         const me = await ensureCurrentUserInFirestore(d);
         const snap = await getDocs(query(userAvatarsCol, where("userId", "==", me.id)));
-        return snap.docs
-          .map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() as AnyObj) }))
-          .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+        return (snap.docs
+          .map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() as AnyObj) })) as AnyObj[])
+          .sort((a: any, b: any) => (a.createdAt < b.createdAt ? 1 : -1));
       }
       return (d.userAvatars ?? []).filter((a) => a.userId === meId).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
     },
@@ -4280,7 +4280,7 @@ export function useGetMyStickers(opts?: AnyObj) {
             userId: av.userId,
             avatarConfig: config,
             imageUrl: config
-              ? resolveStickerImageUrl(config as AnyObj, s.expressionKey, s.imageUrl)
+              ? resolveStickerImageUrl(config as any, s.expressionKey, s.imageUrl)
               : s.imageUrl,
           });
         }

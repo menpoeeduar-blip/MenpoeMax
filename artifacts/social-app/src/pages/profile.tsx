@@ -402,73 +402,75 @@ export default function Profile() {
   return (
     <Shell>
       <div className="max-w-4xl mx-auto w-full pb-24">
-        {/* Cover */}
-        <div className="relative h-48 md:h-64 bg-gradient-to-br from-primary/30 to-accent/30 overflow-hidden">
-          {cover && <img src={cover} className="w-full h-full object-cover" alt="" loading="lazy" decoding="async" />}
-          {isOwnProfile && (
-            <>
-              <input ref={coverRef} type="file" accept="image/*" className="hidden" onChange={handleUploadCover} />
-              <button onClick={() => coverRef.current?.click()} disabled={coverUploading}
-                className="absolute bottom-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur text-white text-xs hover:bg-black/70 transition-colors">
-                <Camera className="w-3.5 h-3.5" />{coverUploading ? "..." : "Cambiar portada"}
-              </button>
-            </>
-          )}
-          {isOwnProfile && !editMode && (
-            <div className="absolute top-4 right-4 flex items-center gap-2">
-              {!displayProfile.isVerified && (
-                <button
-                  type="button"
-                  onClick={() => setShowVerifModal(true)}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-cyan-500/25 border border-cyan-400/50 backdrop-blur text-cyan-300 text-xs font-bold hover:bg-cyan-500/40 transition-all shadow-[0_0_12px_rgba(6,182,212,0.4)]"
-                >
-                  <ShieldCheck className="w-3.5 h-3.5" /> Solicitar Verificación
+        {/* Profile Card Container */}
+        <div className="bg-card/95 backdrop-blur-md rounded-2xl md:rounded-3xl border border-border/50 shadow-sm overflow-hidden mb-6">
+          {/* Cover */}
+          <div className="relative h-48 md:h-64 bg-gradient-to-br from-primary/30 to-accent/30 overflow-hidden">
+            {cover && <img src={cover} className="w-full h-full object-cover" alt="" loading="lazy" decoding="async" />}
+            {isOwnProfile && (
+              <>
+                <input ref={coverRef} type="file" accept="image/*" className="hidden" onChange={handleUploadCover} />
+                <button onClick={() => coverRef.current?.click()} disabled={coverUploading}
+                  className="absolute bottom-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur text-white text-xs hover:bg-black/70 transition-colors">
+                  <Camera className="w-3.5 h-3.5" />{coverUploading ? "..." : "Cambiar portada"}
                 </button>
-              )}
-              <button onClick={openEdit}
-                className="flex items-center gap-2 px-4 py-2 rounded-full bg-black/40 backdrop-blur text-white text-sm hover:bg-black/60 transition-colors" data-testid="button-edit-profile">
-                <Edit3 className="w-4 h-4" />Editar perfil
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="px-6">
-          <div className="flex items-end justify-between -mt-14 mb-4">
-            <div className="relative">
-              <img src={avatar} className="w-28 h-28 rounded-full border-4 border-background object-cover bg-muted" alt="" loading="lazy" decoding="async" />
-              {displayProfile.isVerified && (
-                <div className="absolute bottom-1 right-1 w-7 h-7 rounded-full bg-primary flex items-center justify-center border-2 border-background">
-                  <CheckCircle className="w-4 h-4 text-white" />
-                </div>
-              )}
-              {isOwnProfile && (
-                <>
-                  <input ref={avatarRef} type="file" accept="image/*" className="hidden" onChange={handleUploadAvatar} />
-                  <button onClick={() => avatarRef.current?.click()} disabled={avatarUploading}
-                    className="absolute bottom-1 left-1 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center border-2 border-background hover:bg-black/80 transition-colors"
-                    title="Subir foto">
-                    <Camera className="w-3.5 h-3.5" />
-                  </button>
+              </>
+            )}
+            {isOwnProfile && !editMode && (
+              <div className="absolute top-4 right-4 flex items-center gap-2">
+                {!displayProfile.isVerified && (
                   <button
                     type="button"
-                    onClick={() => {
-                      setProfileTab("avatars");
-                      const url = new URL(window.location.href);
-                      url.searchParams.set("tab", "avatars");
-                      window.history.replaceState({}, "", `${url.pathname}${url.search}`);
-                    }}
-                    className="absolute bottom-1 right-8 w-7 h-7 rounded-full bg-primary/90 text-white flex items-center justify-center border-2 border-background hover:bg-primary transition-colors"
-                    title="Crear avatar"
-                    data-testid="button-profile-avatar-studio"
+                    onClick={() => setShowVerifModal(true)}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-cyan-500/25 border border-cyan-400/50 backdrop-blur text-cyan-300 text-xs font-bold hover:bg-cyan-500/40 transition-all shadow-[0_0_12px_rgba(6,182,212,0.4)]"
                   >
-                    <Sparkles className="w-3.5 h-3.5" />
+                    <ShieldCheck className="w-3.5 h-3.5" /> Solicitar Verificación
                   </button>
-                </>
-              )}
-            </div>
-            {!isOwnProfile && (
-              <div className="flex items-center gap-2 flex-wrap mb-2">
+                )}
+                <button onClick={openEdit}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-black/40 backdrop-blur text-white text-sm hover:bg-black/60 transition-colors" data-testid="button-edit-profile">
+                  <Edit3 className="w-4 h-4" />Editar perfil
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="px-4 sm:px-6 pb-6">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 -mt-14 mb-4">
+              <div className="relative self-start">
+                <img src={avatar} className="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-card object-cover bg-muted shadow-md" alt="" loading="lazy" decoding="async" />
+                {displayProfile.isVerified && (
+                  <div className="absolute bottom-1 right-1 w-7 h-7 rounded-full bg-primary flex items-center justify-center border-2 border-card">
+                    <CheckCircle className="w-4 h-4 text-white" />
+                  </div>
+                )}
+                {isOwnProfile && (
+                  <>
+                    <input ref={avatarRef} type="file" accept="image/*" className="hidden" onChange={handleUploadAvatar} />
+                    <button onClick={() => avatarRef.current?.click()} disabled={avatarUploading}
+                      className="absolute bottom-1 left-1 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center border-2 border-card hover:bg-black/80 transition-colors"
+                      title="Subir foto">
+                      <Camera className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProfileTab("avatars");
+                        const url = new URL(window.location.href);
+                        url.searchParams.set("tab", "avatars");
+                        window.history.replaceState({}, "", `${url.pathname}${url.search}`);
+                      }}
+                      className="absolute bottom-1 right-8 w-7 h-7 rounded-full bg-primary/90 text-white flex items-center justify-center border-2 border-card hover:bg-primary transition-colors"
+                      title="Crear avatar"
+                      data-testid="button-profile-avatar-studio"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                    </button>
+                  </>
+                )}
+              </div>
+              {!isOwnProfile && (
+                <div className="flex items-center gap-2 flex-wrap pt-2 sm:pt-0 sm:mb-1 z-10">
                 <Button
                   size="sm"
                   onClick={handleFollow}
@@ -795,69 +797,72 @@ export default function Profile() {
               )}
             </div>
           )}
-
-          {/* Posts tab */}
-          <Tabs
-            value={profileTab}
-            onValueChange={(tab) => {
-              setProfileTab(tab);
-              const url = new URL(window.location.href);
-              if (tab === "posts") url.searchParams.delete("tab");
-              else url.searchParams.set("tab", tab);
-              window.history.replaceState({}, "", `${url.pathname}${url.search}`);
-            }}
-            className="w-full"
-          >
-            <TabsList className="bg-transparent border-b border-border w-full justify-start rounded-none h-auto p-0 mb-6 overflow-x-auto flex-nowrap">
-              <TabsTrigger value="posts" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary px-3 sm:px-4 py-3 text-sm shrink-0"><Grid className="w-4 h-4 mr-1.5" />Publicaciones</TabsTrigger>
-              {isOwnProfile && (
-                <>
-                  <TabsTrigger value="avatars" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary px-3 sm:px-4 py-3 text-sm shrink-0"><Sparkles className="w-4 h-4 mr-1.5" />Avatares</TabsTrigger>
-                  <TabsTrigger value="photos" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary px-3 sm:px-4 py-3 text-sm shrink-0"><Image className="w-4 h-4 mr-1.5" />Fotos</TabsTrigger>
-                  <TabsTrigger value="saved" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary px-3 sm:px-4 py-3 text-sm shrink-0"><Star className="w-4 h-4 mr-1.5 text-amber-400 fill-amber-400/20" />Favoritos</TabsTrigger>
-                  <TabsTrigger value="stats" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary px-3 sm:px-4 py-3 text-sm shrink-0"><BarChart3 className="w-4 h-4 mr-1.5" />Estadísticas</TabsTrigger>
-                </>
-              )}
-            </TabsList>
-            <TabsContent value="posts" className="space-y-4">
-              {isOwnProfile && (
-                <CreatePostBox placeholder="Escribe algo en tu muro..." defaultVisibility="publico" />
-              )}
-              {postsLoading ? (
-                <div className="h-32 glass-panel rounded-2xl animate-pulse" />
-              ) : (userPosts ?? []).length === 0 ? (
-                <div className="text-center py-16 text-muted-foreground">
-                  <FileText className="w-12 h-12 mx-auto mb-3 text-muted-foreground/30" />
-                  <p className="font-medium">Aún no hay publicaciones</p>
-                  <p className="text-sm">{isOwnProfile ? "¡Comparte algo con tus seguidores!" : "Este usuario aún no ha publicado."}</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {(userPosts ?? []).map((post) => (
-                    <PostCard key={post.id} post={post as any} />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-            {isOwnProfile && (
-              <>
-                <TabsContent value="avatars">
-                  <ProfileAvatarsTab />
-                </TabsContent>
-                <TabsContent value="photos">
-                  <ProfilePhotosTab />
-                </TabsContent>
-                <TabsContent value="saved">
-                  <ProfileSavedTab />
-                </TabsContent>
-                <TabsContent value="stats">
-                  <ProfileStatsTab />
-                </TabsContent>
-              </>
-            )}
-          </Tabs>
         </div>
       </div>
+
+      {/* Tabs and Posts */}
+      <div className="bg-card/95 backdrop-blur-md rounded-2xl md:rounded-3xl border border-border/50 shadow-sm p-4 sm:p-6">
+        <Tabs
+          value={profileTab}
+          onValueChange={(tab) => {
+            setProfileTab(tab);
+            const url = new URL(window.location.href);
+            if (tab === "posts") url.searchParams.delete("tab");
+            else url.searchParams.set("tab", tab);
+            window.history.replaceState({}, "", `${url.pathname}${url.search}`);
+          }}
+          className="w-full"
+        >
+          <TabsList className="bg-transparent border-b border-border w-full justify-start rounded-none h-auto p-0 mb-6 overflow-x-auto flex-nowrap">
+            <TabsTrigger value="posts" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary px-3 sm:px-4 py-3 text-sm shrink-0"><Grid className="w-4 h-4 mr-1.5" />Publicaciones</TabsTrigger>
+            {isOwnProfile && (
+              <>
+                <TabsTrigger value="avatars" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary px-3 sm:px-4 py-3 text-sm shrink-0"><Sparkles className="w-4 h-4 mr-1.5" />Avatares</TabsTrigger>
+                <TabsTrigger value="photos" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary px-3 sm:px-4 py-3 text-sm shrink-0"><Image className="w-4 h-4 mr-1.5" />Fotos</TabsTrigger>
+                <TabsTrigger value="saved" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary px-3 sm:px-4 py-3 text-sm shrink-0"><Star className="w-4 h-4 mr-1.5 text-amber-400 fill-amber-400/20" />Favoritos</TabsTrigger>
+                <TabsTrigger value="stats" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-primary px-3 sm:px-4 py-3 text-sm shrink-0"><BarChart3 className="w-4 h-4 mr-1.5" />Estadísticas</TabsTrigger>
+              </>
+            )}
+          </TabsList>
+          <TabsContent value="posts" className="space-y-4">
+            {isOwnProfile && (
+              <CreatePostBox placeholder="Escribe algo en tu muro..." defaultVisibility="publico" />
+            )}
+            {postsLoading ? (
+              <div className="h-32 glass-panel rounded-2xl animate-pulse" />
+            ) : (userPosts ?? []).length === 0 ? (
+              <div className="text-center py-16 text-muted-foreground">
+                <FileText className="w-12 h-12 mx-auto mb-3 text-muted-foreground/30" />
+                <p className="font-medium">Aún no hay publicaciones</p>
+                <p className="text-sm">{isOwnProfile ? "¡Comparte algo con tus seguidores!" : "Este usuario aún no ha publicado."}</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {(userPosts ?? []).map((post) => (
+                  <PostCard key={post.id} post={post as any} />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+          {isOwnProfile && (
+            <>
+              <TabsContent value="avatars">
+                <ProfileAvatarsTab />
+              </TabsContent>
+              <TabsContent value="photos">
+                <ProfilePhotosTab />
+              </TabsContent>
+              <TabsContent value="saved">
+                <ProfileSavedTab />
+              </TabsContent>
+              <TabsContent value="stats">
+                <ProfileStatsTab />
+              </TabsContent>
+            </>
+          )}
+        </Tabs>
+      </div>
+    </div>
 
       {isOwnProfile && (
         <EntityVerificationModal

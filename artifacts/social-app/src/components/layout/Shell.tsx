@@ -370,10 +370,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
       {!isReelsPage && <ScrollToTopFab />}
       <PwaInstallPrompt />
 
-      <nav className="md:hidden fixed bottom-0 w-full h-16 border-t border-primary/30 bg-background/50 backdrop-blur-2xl z-50 flex items-center justify-around overflow-hidden">
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-[2px] overflow-hidden">
-          <div className="h-full w-1/3 animate-[neon-line-sweep_3.4s_linear_infinite] bg-gradient-to-r from-transparent via-fuchsia-400 to-cyan-400" />
-        </div>
+      <nav className="md:hidden fixed bottom-0 w-full h-16 border-t border-border/80 dark:border-primary/30 bg-card/95 dark:bg-background/90 backdrop-blur-2xl z-50 flex items-center justify-around overflow-hidden shadow-lg">
+        {darkMode && (
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-[2px] overflow-hidden">
+            <div className="h-full w-1/3 animate-[neon-line-sweep_3.4s_linear_infinite] bg-gradient-to-r from-transparent via-fuchsia-400 to-cyan-400" />
+          </div>
+        )}
         {/* Home */}
         <Link href="/" className={cn("p-2 rounded-xl", location === "/" ? "text-primary shadow-[0_0_12px_hsl(var(--primary)/0.5)]" : "text-muted-foreground")}>
           <Home className="w-6 h-6" />

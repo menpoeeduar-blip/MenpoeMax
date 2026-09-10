@@ -42,12 +42,12 @@ type Props = {
 };
 
 const CTA_CONFIG: Record<string, { label: string; icon: React.ReactNode; color: string; bg: string }> = {
-  whatsapp:  { label: "WhatsApp",       icon: <MessageCircle className="w-4 h-4" />, color: "text-emerald-400", bg: "bg-emerald-500/15 border-emerald-500/40 hover:bg-emerald-500/25" },
-  call:      { label: "Llamar ahora",   icon: <Phone className="w-4 h-4" />,         color: "text-sky-400",     bg: "bg-sky-500/15 border-sky-500/40 hover:bg-sky-500/25" },
-  email:     { label: "Enviar correo",  icon: <Mail className="w-4 h-4" />,           color: "text-amber-400",   bg: "bg-amber-500/15 border-amber-500/40 hover:bg-amber-500/25" },
-  website:   { label: "Visitar web",    icon: <Globe className="w-4 h-4" />,          color: "text-violet-400",  bg: "bg-violet-500/15 border-violet-500/40 hover:bg-violet-500/25" },
-  more_info: { label: "Más información",icon: <Info className="w-4 h-4" />,           color: "text-blue-400",    bg: "bg-blue-500/15 border-blue-500/40 hover:bg-blue-500/25" },
-  buy_now:   { label: "Comprar ahora",  icon: <ShoppingCart className="w-4 h-4" />,   color: "text-rose-400",    bg: "bg-rose-500/15 border-rose-500/40 hover:bg-rose-500/25" },
+  whatsapp:  { label: "WhatsApp",        icon: <MessageCircle className="w-4 h-4" />, color: "text-emerald-700 dark:text-emerald-300", bg: "bg-emerald-100 dark:bg-emerald-500/15 border-emerald-300 dark:border-emerald-500/40 hover:bg-emerald-200 dark:hover:bg-emerald-500/25" },
+  call:      { label: "Llamar ahora",    icon: <Phone className="w-4 h-4" />,         color: "text-sky-700 dark:text-sky-300",         bg: "bg-sky-100 dark:bg-sky-500/15 border-sky-300 dark:border-sky-500/40 hover:bg-sky-200 dark:hover:bg-sky-500/25" },
+  email:     { label: "Enviar correo",   icon: <Mail className="w-4 h-4" />,          color: "text-amber-700 dark:text-amber-300",     bg: "bg-amber-100 dark:bg-amber-500/15 border-amber-300 dark:border-amber-500/40 hover:bg-amber-200 dark:hover:bg-amber-500/25" },
+  website:   { label: "Visitar web",     icon: <Globe className="w-4 h-4" />,         color: "text-violet-700 dark:text-violet-300",   bg: "bg-violet-100 dark:bg-violet-500/15 border-violet-300 dark:border-violet-500/40 hover:bg-violet-200 dark:hover:bg-violet-500/25" },
+  more_info: { label: "Más información", icon: <Info className="w-4 h-4" />,          color: "text-blue-700 dark:text-blue-300",       bg: "bg-blue-100 dark:bg-blue-500/15 border-blue-300 dark:border-blue-500/40 hover:bg-blue-200 dark:hover:bg-blue-500/25" },
+  buy_now:   { label: "Comprar ahora",   icon: <ShoppingCart className="w-4 h-4" />,  color: "text-rose-700 dark:text-rose-300",       bg: "bg-rose-100 dark:bg-rose-500/15 border-rose-300 dark:border-rose-500/40 hover:bg-rose-200 dark:hover:bg-rose-500/25" },
 };
 
 const CATEGORY_EMOJI: Record<string, string> = {
@@ -97,21 +97,21 @@ export const AdPostCard = memo(function AdPostCard({ post }: Props) {
   return (
     <article
       id={`ad-post-${post.id}`}
-      className="rounded-2xl overflow-hidden border border-amber-500/25 bg-gradient-to-br from-amber-950/30 via-card to-rose-950/20 shadow-lg shadow-amber-900/10"
+      className="rounded-2xl overflow-hidden border border-amber-300/80 dark:border-amber-500/25 bg-card shadow-lg shadow-amber-900/5 dark:bg-gradient-to-br dark:from-amber-950/30 dark:via-card dark:to-rose-950/20"
       data-testid={`ad-post-card-${post.id}`}
     >
       {/* Sponsored badge */}
-      <div className="flex items-center justify-between gap-2 px-4 pt-3 pb-2 border-b border-amber-500/15">
+      <div className="flex items-center justify-between gap-2 px-4 pt-3 pb-2 border-b border-amber-200 dark:border-amber-500/15 bg-amber-50/50 dark:bg-transparent">
         <div className="flex items-center gap-1.5 min-w-0">
-          <Megaphone className="w-3.5 h-3.5 text-amber-400 animate-pulse flex-none" />
-          <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest flex-none">Patrocinado</span>
+          <Megaphone className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 animate-pulse flex-none" />
+          <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-widest flex-none">Patrocinado</span>
           {adData.durationLabel && (
-            <span className="text-[10px] text-amber-300/80 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-full font-medium truncate">
+            <span className="text-[10px] text-amber-900 dark:text-amber-300 bg-amber-100 dark:bg-amber-500/20 border border-amber-300 dark:border-amber-500/30 px-2 py-0.5 rounded-full font-semibold truncate">
               {adData.durationLabel}
             </span>
           )}
         </div>
-        <span className="text-[10px] text-muted-foreground/50 flex-none">{timeAgo}</span>
+        <span className="text-[10px] text-muted-foreground flex-none">{timeAgo}</span>
       </div>
 
       {/* Image */}
@@ -152,7 +152,7 @@ export const AdPostCard = memo(function AdPostCard({ post }: Props) {
             <Link href={`/profile/${post.author?.id}`} className="text-xs font-semibold hover:text-primary">
               {post.author?.displayName ?? "Anunciante"}
             </Link>
-            <p className="text-[10px] text-amber-400/70">Anunciante verificado</p>
+            <p className="text-[10px] text-amber-700 dark:text-amber-400 font-medium">Anunciante verificado</p>
           </div>
         </div>
 
@@ -161,18 +161,18 @@ export const AdPostCard = memo(function AdPostCard({ post }: Props) {
           <div className="min-w-0">
             {!image && (
               <div className="mb-1">
-                <span className="text-[10px] font-semibold text-amber-400/80 uppercase tracking-wider flex items-center gap-1">
+                <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400/80 uppercase tracking-wider flex items-center gap-1">
                   {categoryEmoji} {adData.category ?? "Producto"}
                 </span>
               </div>
             )}
-            <h3 className="font-bold text-base text-white leading-tight truncate">
+            <h3 className="font-bold text-base text-foreground dark:text-white leading-tight truncate">
               {adData.productName ?? "Producto / Servicio"}
             </h3>
           </div>
           {adData.price && (
             <div className="flex-none">
-              <span className="px-2.5 py-1 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-1">
+              <span className="px-2.5 py-1 rounded-xl bg-emerald-100 dark:bg-emerald-500/15 border border-emerald-300 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-400 text-xs font-bold flex items-center gap-1 shadow-sm">
                 <Tag className="w-3 h-3" />
                 {adData.price}
               </span>
@@ -192,7 +192,7 @@ export const AdPostCard = memo(function AdPostCard({ post }: Props) {
               href={`https://wa.me/${adData.whatsapp.replace(/\D/g, "")}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-2.5 py-1 hover:bg-emerald-500/20 transition-colors"
+              className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-500/10 border border-emerald-300 dark:border-emerald-500/30 rounded-full px-2.5 py-1 hover:bg-emerald-200 dark:hover:bg-emerald-500/20 transition-colors"
             >
               <MessageCircle className="w-3 h-3" />
               WhatsApp
@@ -201,7 +201,7 @@ export const AdPostCard = memo(function AdPostCard({ post }: Props) {
           {adData.phone && (
             <a
               href={`tel:${adData.phone}`}
-              className="flex items-center gap-1.5 text-[11px] font-medium text-sky-400 bg-sky-500/10 border border-sky-500/30 rounded-full px-2.5 py-1 hover:bg-sky-500/20 transition-colors"
+              className="flex items-center gap-1.5 text-[11px] font-semibold text-sky-800 dark:text-sky-300 bg-sky-100 dark:bg-sky-500/10 border border-sky-300 dark:border-sky-500/30 rounded-full px-2.5 py-1 hover:bg-sky-200 dark:hover:bg-sky-500/20 transition-colors"
             >
               <Phone className="w-3 h-3" />
               {adData.phone}
@@ -210,7 +210,7 @@ export const AdPostCard = memo(function AdPostCard({ post }: Props) {
           {adData.email && (
             <a
               href={`mailto:${adData.email}`}
-              className="flex items-center gap-1.5 text-[11px] font-medium text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded-full px-2.5 py-1 hover:bg-amber-500/20 transition-colors"
+              className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-500/30 rounded-full px-2.5 py-1 hover:bg-amber-200 dark:hover:bg-amber-500/20 transition-colors"
             >
               <Mail className="w-3 h-3" />
               Email
@@ -221,7 +221,7 @@ export const AdPostCard = memo(function AdPostCard({ post }: Props) {
               href={adData.website}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-[11px] font-medium text-violet-400 bg-violet-500/10 border border-violet-500/30 rounded-full px-2.5 py-1 hover:bg-violet-500/20 transition-colors"
+              className="flex items-center gap-1.5 text-[11px] font-semibold text-violet-800 dark:text-violet-300 bg-violet-100 dark:bg-violet-500/10 border border-violet-300 dark:border-violet-500/30 rounded-full px-2.5 py-1 hover:bg-violet-200 dark:hover:bg-violet-500/20 transition-colors"
             >
               <Globe className="w-3 h-3" />
               Web
